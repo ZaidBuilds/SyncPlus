@@ -1,0 +1,43 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "goal_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "on_hold",
+        "completed",
+        "cancelled"
+      ],
+      "default": "not_started"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "professional",
+        "internal"
+      ],
+      "default": "personal"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ]
+}

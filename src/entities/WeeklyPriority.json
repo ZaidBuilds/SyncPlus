@@ -1,0 +1,25 @@
+{
+  "name": "WeeklyPriority",
+  "type": "object",
+  "properties": {
+    "week_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Monday of the target week (yyyy-MM-dd)"
+    },
+    "priorities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of top priority statements for the week"
+    },
+    "intention": {
+      "type": "string",
+      "description": "One-line theme or intention for the week"
+    }
+  },
+  "required": [
+    "week_start"
+  ]
+}

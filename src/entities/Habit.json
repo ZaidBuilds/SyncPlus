@@ -1,0 +1,33 @@
+{
+  "name": "Habit",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "monthly"
+      ],
+      "default": "daily"
+    },
+    "target": {
+      "type": "number",
+      "default": 1
+    },
+    "color": {
+      "type": "string",
+      "default": "#6366f1"
+    }
+  },
+  "required": [
+    "name",
+    "frequency"
+  ]
+}

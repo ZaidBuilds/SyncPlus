@@ -1,0 +1,68 @@
+{
+  "name": "Deal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "contact_id": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "lead",
+        "proposal",
+        "meeting",
+        "contracted",
+        "negotiating",
+        "closed",
+        "lost"
+      ],
+      "default": "lead"
+    },
+    "expected_close_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "description": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lead_source": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "whatsapp",
+        "referral",
+        "form",
+        "linkedin",
+        "cold_outreach",
+        "other"
+      ]
+    },
+    "last_activity_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "title",
+    "stage"
+  ]
+}

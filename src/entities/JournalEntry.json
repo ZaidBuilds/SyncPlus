@@ -1,0 +1,32 @@
+{
+  "name": "JournalEntry",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "what_done": {
+      "type": "string"
+    },
+    "what_failed": {
+      "type": "string"
+    },
+    "improvements": {
+      "type": "string"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "amazing",
+        "good",
+        "neutral",
+        "bad",
+        "stressed"
+      ]
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

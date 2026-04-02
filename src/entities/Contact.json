@@ -1,0 +1,61 @@
+{
+  "name": "Contact",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "gstin": {
+      "type": "string",
+      "description": "GST Identification Number"
+    },
+    "pan": {
+      "type": "string",
+      "description": "PAN number"
+    },
+    "address": {
+      "type": "string"
+    },
+    "lead_source": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "whatsapp",
+        "referral",
+        "form",
+        "linkedin",
+        "cold_outreach",
+        "other"
+      ],
+      "default": "other"
+    },
+    "last_interaction_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "Goal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "target_value": {
+      "type": "string"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "professional"
+      ],
+      "default": "personal"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Note",
+  "type": "object",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Linked deal ID"
+    },
+    "contact_id": {
+      "type": "string",
+      "description": "Linked contact ID"
+    },
+    "content": {
+      "type": "string",
+      "description": "Note body"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "note",
+        "email",
+        "whatsapp",
+        "call",
+        "meeting"
+      ],
+      "default": "note"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}

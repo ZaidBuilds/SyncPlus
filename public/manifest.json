@@ -1,0 +1,16 @@
+{
+  "name": "SyncPlus",
+  "short_name": "SyncPlus",
+  "description": "An integrated workspace for planning, execution, pipeline, and collections.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf8ee",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

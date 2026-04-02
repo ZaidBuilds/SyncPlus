@@ -1,0 +1,128 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string"
+    },
+    "contact_id": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "deal_id": {
+      "type": "string"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "gst_rate": {
+      "type": "number",
+      "default": 18,
+      "description": "GST % (e.g. 18)"
+    },
+    "cgst": {
+      "type": "number"
+    },
+    "sgst": {
+      "type": "number"
+    },
+    "igst": {
+      "type": "number"
+    },
+    "is_igst": {
+      "type": "boolean",
+      "default": false,
+      "description": "Inter-state \u2192 IGST; else CGST+SGST"
+    },
+    "total": {
+      "type": "number"
+    },
+    "from_name": {
+      "type": "string"
+    },
+    "from_email": {
+      "type": "string"
+    },
+    "from_address": {
+      "type": "string"
+    },
+    "from_gstin": {
+      "type": "string",
+      "description": "Seller GSTIN"
+    },
+    "from_pan": {
+      "type": "string",
+      "description": "Seller PAN"
+    },
+    "client_gstin": {
+      "type": "string",
+      "description": "Client GSTIN"
+    },
+    "client_pan": {
+      "type": "string"
+    },
+    "client_address": {
+      "type": "string"
+    },
+    "payment_link": {
+      "type": "string",
+      "description": "Razorpay / UPI link"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "status"
+  ]
+}
