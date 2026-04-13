@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import DealModal from '@/components/deals/DealModal';
 import PipelineSheet from '@/components/pipeline/PipelineSheet';
 import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const STAGES = [
   { key: 'lead', label: 'Lead', color: 'bg-gray-100 text-gray-600 border-gray-200' },
@@ -41,6 +42,25 @@ export default function Pipeline() {
     setModalOpen(false);
     load();
   };
+
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    
+    // Optimistic update
+    const dealId = draggableId;
+    const newStage = destination.droppableId;
+    const deal = deals.find(d => d.id === dealId);
+    
+    if (deal && deal.stage !== newStage) {
+      setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? { ...d, stage: newStage } : d));
+      // Update real DB
+      await dataClient.entities.Deal.update(dealId, { stage: newStage, last_activity_date: new Date().toISOString() });
+      load(); // re-sync just in case
+    }
+  };
+
   const byStage = (stage) => deals.filter(d => d.stage === stage);
   const openValue = deals.filter(d => !['closed', 'lost'].includes(d.stage)).reduce((s, d) => s + (d.value || 0), 0);
 
@@ -75,46 +95,68 @@ export default function Pipeline() {
       {/* Kanban View */}
       {view === 'kanban' && (
         <div className="flex-1 overflow-x-auto p-5">
-          <div className="flex gap-3 h-full min-w-max">
-            {STAGES.map(stage => {
-              const stageDeal = byStage(stage.key);
-              const stageVal = stageDeal.reduce((s, d) => s + (d.value || 0), 0);
-              return (
-                <div key={stage.key} className="w-64 flex flex-col">
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${stage.color}`}>{stage.label}</span>
-                      <span className="text-xs text-muted-foreground">{stageDeal.length}</span>
-                    </div>
-                    {stageVal > 0 && <span className="text-xs text-muted-foreground flex items-center gap-0.5"><IndianRupee size={9} />{stageVal.toLocaleString('en-IN')}</span>}
-                  </div>
-                  <div className="flex-1 bg-secondary/40 rounded-xl p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
-                    {stageDeal.map(deal => (
-                      <div key={deal.id} onClick={() => openEdit(deal)} className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow">
-                        <p className="text-sm font-medium leading-tight">{deal.title}</p>
-                        {deal.contact_name && <p className="text-xs text-muted-foreground mt-1">{deal.contact_name}</p>}
-                        <div className="flex items-center gap-2 mt-2">
-                          {deal.value > 0 && (
-                            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                              <IndianRupee size={10} />{deal.value.toLocaleString('en-IN')}
-                            </span>
-                          )}
-                          {deal.expected_close_date && (
-                            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                              <Calendar size={10} />{format(new Date(deal.expected_close_date), 'MMM d')}
-                            </span>
-                          )}
-                        </div>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-3 h-full min-w-max">
+              {STAGES.map(stage => {
+                const stageDeal = byStage(stage.key);
+                const stageVal = stageDeal.reduce((s, d) => s + (d.value || 0), 0);
+                return (
+                  <div key={stage.key} className="w-64 flex flex-col">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${stage.color}`}>{stage.label}</span>
+                        <span className="text-xs text-muted-foreground">{stageDeal.length}</span>
                       </div>
-                    ))}
-                    <button onClick={() => openNew(stage.key)} className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors">
-                      <Plus size={12} /> Add deal
-                    </button>
+                      {stageVal > 0 && <span className="text-xs text-muted-foreground flex items-center gap-0.5"><IndianRupee size={9} />{stageVal.toLocaleString('en-IN')}</span>}
+                    </div>
+                    
+                    <Droppable droppableId={stage.key}>
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef} 
+                          {...provided.droppableProps}
+                          className={cn("flex-1 bg-secondary/40 rounded-xl p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]", snapshot.isDraggingOver && "bg-secondary/60")}
+                        >
+                          {stageDeal.map((deal, index) => (
+                            <Draggable key={deal.id} draggableId={deal.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  onClick={() => openEdit(deal)} 
+                                  className={cn("bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow", snapshot.isDragging && "shadow-lg rotate-2 scale-105 z-50")}
+                                >
+                                  <p className="text-sm font-medium leading-tight">{deal.title}</p>
+                                  {deal.contact_name && <p className="text-xs text-muted-foreground mt-1">{deal.contact_name}</p>}
+                                  <div className="flex items-center gap-2 mt-2">
+                                    {deal.value > 0 && (
+                                      <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                                        <IndianRupee size={10} />{deal.value.toLocaleString('en-IN')}
+                                      </span>
+                                    )}
+                                    {deal.expected_close_date && (
+                                      <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                                        <Calendar size={10} />{format(new Date(deal.expected_close_date), 'MMM d')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                          <button onClick={() => openNew(stage.key)} className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors mt-2">
+                            <Plus size={12} /> Add deal
+                          </button>
+                        </div>
+                      )}
+                    </Droppable>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </DragDropContext>
         </div>
       )}
 

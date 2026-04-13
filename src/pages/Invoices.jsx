@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, Search, FileText } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import InvoiceModal from '@/components/invoices/InvoiceModal';
@@ -52,9 +53,14 @@ export default function Invoices() {
           <h1 className="text-xl font-semibold">Invoices</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{invoices.length} invoices</p>
         </div>
-        <button onClick={() => { setEditing(null); setModal(true); }} className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium px-3 py-2 rounded-lg hover:bg-primary/90">
-          <Plus size={15} /> New Invoice
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/settings" className="text-sm font-medium border border-border px-3 py-2 rounded-lg hover:bg-secondary">
+            Personalize
+          </Link>
+          <button onClick={() => { setEditing(null); setModal(true); }} className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium px-3 py-2 rounded-lg hover:bg-primary/90">
+            <Plus size={15} /> New Invoice
+          </button>
+        </div>
       </div>
 
       {/* Summary */}

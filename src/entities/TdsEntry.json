@@ -1,0 +1,41 @@
+{
+  "name": "TdsEntry",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string"
+    },
+    "financial_year": {
+      "type": "string"
+    },
+    "quarter": {
+      "type": "string",
+      "enum": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4"
+      ],
+      "default": "Q1"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "certificate_number": {
+      "type": "string"
+    },
+    "date_received": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_name",
+    "financial_year",
+    "quarter",
+    "amount"
+  ]
+}

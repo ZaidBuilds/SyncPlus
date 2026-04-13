@@ -1,21 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Trash2, Plus, Printer, CheckCircle, Link } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { X, Trash2, Plus, Printer, CheckCircle, Link2, Download, Palette } from 'lucide-react';
 import { format } from 'date-fns';
+import { getPersonalization } from '@/lib/personalization';
 
 const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
 const GST_RATES = [0, 5, 12, 18, 28];
+const TEMPLATES = [
+  { value: 'classic', label: 'Classic' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'executive', label: 'Executive' },
+];
+
+function getTemplateStyles(template) {
+  if (template === 'minimal') {
+    return { accent: [15, 23, 42], heading: 'MINIMAL INVOICE' };
+  }
+
+  if (template === 'executive') {
+    return { accent: [37, 99, 235], heading: 'EXECUTIVE INVOICE' };
+  }
+
+  return { accent: [13, 148, 136], heading: 'TAX INVOICE' };
+}
 const INR = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
 export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
+  const personalization = getPersonalization();
   const [form, setForm] = useState({
-    invoice_number: `INV-${Date.now().toString().slice(-5)}`,
+    invoice_number: `${personalization.invoice_prefix || 'INV'}-${Date.now().toString().slice(-5)}`,
+    invoice_template: personalization.default_invoice_template || 'classic',
     contact_name: '', contact_gstin: '', client_pan: '', client_address: '',
     issue_date: format(new Date(), 'yyyy-MM-dd'),
     due_date: '', paid_date: '', status: 'draft', currency: 'INR',
-    from_name: '', from_email: '', from_address: '', from_gstin: '', from_pan: '',
+    from_name: personalization.business_name || '', from_email: personalization.business_email || '', from_address: personalization.business_address || '', from_gstin: personalization.gstin || '', from_pan: personalization.pan || '',
     line_items: [{ description: '', quantity: 1, unit_price: 0, total: 0 }],
-    gst_rate: 18, is_igst: false, cgst: 0, sgst: 0, igst: 0,
-    subtotal: 0, total: 0, payment_link: '', notes: '',
+    gst_rate: personalization.default_gst_rate || 18, is_igst: false, cgst: 0, sgst: 0, igst: 0,
+    subtotal: 0, total: 0, payment_link: personalization.upi_id ? `upi://pay?pa=${personalization.upi_id}` : '', notes: personalization.default_invoice_note || [personalization.bank_name && `Bank: ${personalization.bank_name}`, personalization.account_number && `A/C: ${personalization.account_number}`, personalization.ifsc && `IFSC: ${personalization.ifsc}`, personalization.upi_id && `UPI: ${personalization.upi_id}`].filter(Boolean).join(' · '),
   });
   const [saving, setSaving] = useState(false);
   const printRef = useRef();
@@ -23,11 +44,13 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
   useEffect(() => {
     if (invoice) {
       setForm({
+        invoice_template: personalization.default_invoice_template || 'classic',
         ...invoice,
         line_items: invoice.line_items?.length ? invoice.line_items : [{ description: '', quantity: 1, unit_price: 0, total: 0 }]
       });
+      return;
     }
-  }, [invoice]);
+  }, [invoice, personalization.default_invoice_template]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -74,9 +97,10 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
   const handlePrint = () => {
     const content = printRef.current.innerHTML;
     const win = window.open('', '_blank');
+    const template = getTemplateStyles(form.invoice_template);
     win.document.write(`<!DOCTYPE html><html><head><title>Invoice ${form.invoice_number}</title>
       <style>
-        body { font-family: -apple-system, Arial, sans-serif; padding: 48px; color: #111; font-size: 13px; }
+        body { font-family: -apple-system, Arial, sans-serif; padding: 48px; color: #111; font-size: 13px; border-top: 12px solid rgb(${template.accent.join(',')}); }
         h1 { font-size: 22px; margin: 0; } .subtitle { color: #666; font-size: 12px; }
         .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 24px 0; }
         .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
@@ -94,6 +118,98 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
     </head><body>${content}</body></html>`);
     win.document.close();
     setTimeout(() => { win.focus(); win.print(); }, 300);
+  };
+
+  const handleDownload = () => {
+    const template = getTemplateStyles(form.invoice_template);
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    let y = 44;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFillColor(...template.accent);
+    doc.rect(0, 0, pageWidth, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    doc.text(template.heading, 40, y);
+    y += 28;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Invoice #${form.invoice_number}`, 40, y);
+    doc.text(`Issue: ${form.issue_date || '-'}`, 400, y);
+    y += 28;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('From', 40, y);
+    doc.text('Bill To', 300, y);
+    y += 18;
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      doc.splitTextToSize(
+        [form.from_name, form.from_email, form.from_address, `GSTIN: ${form.from_gstin || '-'}`, `PAN: ${form.from_pan || '-'}`].filter(Boolean).join('\n'),
+        220
+      ),
+      40,
+      y
+    );
+    doc.text(
+      doc.splitTextToSize(
+        [form.contact_name || '-', form.client_address || '-', `GSTIN: ${form.contact_gstin || '-'}`, `PAN: ${form.client_pan || '-'}`, `Due: ${form.due_date || '-'}`].join('\n'),
+        220
+      ),
+      300,
+      y
+    );
+    y += 110;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Description', 40, y);
+    doc.text('Qty', 340, y, { align: 'right' });
+    doc.text('Rate', 435, y, { align: 'right' });
+    doc.text('Total', 545, y, { align: 'right' });
+    y += 12;
+    doc.line(40, y, 545, y);
+    y += 18;
+    doc.setFont('helvetica', 'normal');
+
+    form.line_items.forEach((line) => {
+      const descriptionLines = doc.splitTextToSize(line.description || '-', 250);
+      doc.text(descriptionLines, 40, y);
+      doc.text(String(line.quantity || 0), 340, y, { align: 'right' });
+      doc.text(INR(line.unit_price), 435, y, { align: 'right' });
+      doc.text(INR(line.total), 545, y, { align: 'right' });
+      y += Math.max(22, descriptionLines.length * 14);
+    });
+
+    y += 8;
+    doc.line(330, y, 545, y);
+    y += 20;
+    doc.text('Subtotal', 430, y, { align: 'right' });
+    doc.text(INR(form.subtotal), 545, y, { align: 'right' });
+    y += 18;
+    if (form.is_igst) {
+      doc.text(`IGST (${form.gst_rate}%)`, 430, y, { align: 'right' });
+      doc.text(INR(form.igst), 545, y, { align: 'right' });
+      y += 18;
+    } else if (Number(form.gst_rate) > 0) {
+      doc.text(`CGST (${form.gst_rate / 2}%)`, 430, y, { align: 'right' });
+      doc.text(INR(form.cgst), 545, y, { align: 'right' });
+      y += 18;
+      doc.text(`SGST (${form.gst_rate / 2}%)`, 430, y, { align: 'right' });
+      doc.text(INR(form.sgst), 545, y, { align: 'right' });
+      y += 18;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total', 430, y, { align: 'right' });
+    doc.text(INR(form.total), 545, y, { align: 'right' });
+
+    if (form.payment_link || form.notes) {
+      y += 34;
+      doc.setFont('helvetica', 'normal');
+      doc.text(doc.splitTextToSize([form.payment_link && `Payment link: ${form.payment_link}`, form.notes].filter(Boolean).join('\n'), 505), 40, y);
+    }
+
+    doc.save(`${form.invoice_number || 'invoice'}-${form.invoice_template || 'classic'}.pdf`);
   };
 
   const handleSave = async () => {
@@ -117,7 +233,10 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
                 <CheckCircle size={13} /> Mark Paid
               </button>
             )}
-            <button onClick={handlePrint} className="text-muted-foreground hover:bg-secondary p-1.5 rounded-lg" title="Print / PDF">
+            <button onClick={handleDownload} className="text-muted-foreground hover:bg-secondary p-1.5 rounded-lg" title="Download PDF">
+              <Download size={15} />
+            </button>
+            <button onClick={handlePrint} className="text-muted-foreground hover:bg-secondary p-1.5 rounded-lg" title="Print / Save as PDF">
               <Printer size={15} />
             </button>
             {invoice && <button onClick={onDelete} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg"><Trash2 size={15} /></button>}
@@ -130,7 +249,13 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
           {/* Invoice header for print */}
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-bold">TAX INVOICE</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">{getTemplateStyles(form.invoice_template).heading}</h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                  <Palette size={11} />
+                  {TEMPLATES.find((template) => template.value === form.invoice_template)?.label || 'Classic'}
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">#{form.invoice_number}</p>
             </div>
             <div className="text-right">
@@ -165,7 +290,7 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
           </div>
 
           {/* Meta */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium">Invoice #</label>
               <input value={form.invoice_number} onChange={e => set('invoice_number', e.target.value)}
@@ -187,6 +312,13 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
               <label className="text-xs text-muted-foreground font-medium">Due Date</label>
               <input type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)}
                 className="w-full mt-1 text-sm bg-secondary border border-border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-medium">Template</label>
+              <select value={form.invoice_template} onChange={e => set('invoice_template', e.target.value)}
+                className="w-full mt-1 text-sm bg-secondary border border-border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/30">
+                {TEMPLATES.map(template => <option key={template.value} value={template.value}>{template.label}</option>)}
+              </select>
             </div>
           </div>
 
@@ -279,7 +411,7 @@ export default function InvoiceModal({ invoice, onSave, onDelete, onClose }) {
           <div>
             <label className="text-xs font-medium text-muted-foreground">Payment Link (Razorpay / UPI)</label>
             <div className="relative mt-1">
-              <Link size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Link2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input value={form.payment_link} onChange={e => set('payment_link', e.target.value)}
                 placeholder="https://rzp.io/l/..."
                 className="w-full pl-8 text-sm bg-secondary border border-border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/30" />

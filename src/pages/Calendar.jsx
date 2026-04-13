@@ -251,6 +251,24 @@ export default function Calendar() {
             ref={gridRef}
             className="flex-1 overflow-y-auto relative"
             onClick={handleGridClick}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const payload = e.dataTransfer.getData('application/json');
+              if (payload) {
+                const task = JSON.parse(payload);
+                const y = getGridY(e.clientY);
+                const startMin = snapMinutes((y / HOUR_HEIGHT) * 60 + 5 * 60);
+                save({
+                  title: task.title,
+                  date: selectedDate,
+                  start_time: minutesToTime(startMin),
+                  end_time: minutesToTime(startMin + 60),
+                  type: 'deep_work',
+                  task_id: task.id
+                });
+              }
+            }}
             style={{ cursor: dragging ? 'grabbing' : 'crosshair' }}
           >
             <div className="relative" style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
@@ -285,13 +303,14 @@ export default function Calendar() {
                 return (
                   <div
                     key={block.id}
-                    className="absolute left-16 right-2 rounded-lg overflow-hidden z-10 group"
+                    className="absolute left-14 right-2 rounded-md overflow-hidden z-10 group border-l-4"
                     style={{
                       top: `${top}px`,
                       height: `${height}px`,
-                      backgroundColor: color,
-                      opacity: isDraggingThis ? 0.85 : 1,
-                      boxShadow: isDraggingThis ? '0 8px 24px rgba(0,0,0,0.25)' : undefined,
+                      backgroundColor: `${color}E6`, // 90% opacity for solid colored blocks
+                      borderColor: color,
+                      opacity: isDraggingThis ? 0.7 : 1,
+                      boxShadow: isDraggingThis ? '0 8px 24px rgba(0,0,0,0.25)' : '0 1px 3px rgba(0,0,0,0.1)',
                       cursor: dragging?.type === 'move' && isDraggingThis ? 'grabbing' : 'grab',
                     }}
                     onMouseDown={(e) => onBlockMouseDown(e, block)}
@@ -299,7 +318,7 @@ export default function Calendar() {
                   >
                     <div className="px-2 py-1 h-full flex flex-col">
                       <div className="flex items-center gap-1">
-                        <GripVertical size={10} className="text-white/60 flex-shrink-0" />
+                        <GripVertical size={10} className="text-white/40 group-hover:text-white/80 flex-shrink-0" />
                         <p className="text-xs font-semibold text-white leading-tight truncate flex-1">{block.title}</p>
                       </div>
                       {height > 36 && <p className="text-xs text-white/75 ml-4">{disp.start_time} – {disp.end_time}</p>}
@@ -322,17 +341,22 @@ export default function Calendar() {
           <div className="w-52 border-l border-border overflow-y-auto bg-card flex-shrink-0 hidden md:block">
             <div className="px-3 py-3 border-b border-border">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unscheduled Tasks</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Click to schedule</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Drag to calendar to schedule</p>
             </div>
             <div className="p-2 space-y-1">
               {tasks.filter((t) => !blocks.find((b) => b.task_id === t.id)).map((task) => (
-                <button
+                <div
                   key={task.id}
-                  className="w-full text-left text-xs px-2.5 py-2 rounded-lg bg-secondary hover:bg-accent hover:text-accent-foreground transition-colors truncate"
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify(task));
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="w-full text-left text-xs px-2.5 py-2 rounded-md bg-secondary border border-border cursor-grab active:cursor-grabbing hover:shadow-sm transition-all"
                   onClick={() => setModal({ date: selectedDate, title: task.title, task_id: task.id })}
                 >
-                  {task.title}
-                </button>
+                  <p className="font-medium line-clamp-2">{task.title}</p>
+                </div>
               ))}
               {tasks.filter((t) => !blocks.find((b) => b.task_id === t.id)).length === 0 && (
                 <p className="text-xs text-muted-foreground px-2 py-3 text-center">All tasks scheduled!</p>

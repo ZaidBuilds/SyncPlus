@@ -1,0 +1,50 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "software",
+        "marketing",
+        "travel",
+        "equipment",
+        "contractor",
+        "office",
+        "taxes",
+        "education",
+        "other"
+      ],
+      "default": "other"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "payment_mode": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "upi",
+        "card",
+        "cash",
+        "other"
+      ],
+      "default": "upi"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "date",
+    "description",
+    "amount"
+  ]
+}

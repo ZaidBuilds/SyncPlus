@@ -1,16 +1,16 @@
 import {
   BarChart3,
-  BellRing,
   Bot,
   BriefcaseBusiness,
+  Calculator,
   CalendarDays,
   FileText,
-  Flame,
   FolderOpen,
-  Globe,
   Home,
   ListTodo,
   NotebookPen,
+  Receipt,
+  Settings2,
   Target,
   Users,
   Zap,
@@ -18,82 +18,28 @@ import {
 
 export const navigationSections = [
   {
-    label: 'Overview',
+    label: 'Command Center',
     items: [
       {
         path: '/',
         label: 'Dashboard',
-        section: 'Overview',
-        description: 'See the full picture across focus, clients, cash flow, and follow-ups.',
+        section: 'Execution',
+        description: 'See the full picture across clients, cash flow, and focus.',
         icon: Home,
       },
-    ],
-  },
-  {
-    label: 'Personal OS',
-    items: [
       {
         path: '/daily',
         label: 'Daily Execution',
-        section: 'Personal OS',
-        description: 'Run today from tasks, habits, schedule, and quick journal actions.',
+        section: 'Execution',
+        description: 'Your single page to run the day. Tasks, habits, and schedule in one view.',
         icon: Zap,
-      },
-      {
-        path: '/goals',
-        label: 'Goals',
-        section: 'Personal OS',
-        description: 'Track long-term outcomes and the progress behind them.',
-        icon: Target,
-      },
-      {
-        path: '/projects',
-        label: 'Projects',
-        section: 'Personal OS',
-        description: 'Manage active projects connected to your goals.',
-        icon: FolderOpen,
-      },
-      {
-        path: '/tasks',
-        label: 'Tasks',
-        section: 'Personal OS',
-        description: 'Organize and complete the concrete work on your plate.',
-        icon: ListTodo,
-      },
-      {
-        path: '/habits',
-        label: 'Habits',
-        section: 'Personal OS',
-        description: 'Build streaks and keep the repeatable behaviors visible.',
-        icon: Flame,
       },
       {
         path: '/calendar',
         label: 'Calendar',
-        section: 'Personal OS',
-        description: 'Time-block the day and place work into a real schedule.',
+        section: 'Execution',
+        description: 'Time-block the week and place work into a real schedule.',
         icon: CalendarDays,
-      },
-      {
-        path: '/journal',
-        label: 'Journal',
-        section: 'Personal OS',
-        description: 'Capture thoughts, notes, and daily reflection.',
-        icon: NotebookPen,
-      },
-      {
-        path: '/weekly-review',
-        label: 'Weekly Review',
-        section: 'Personal OS',
-        description: 'Review the week and reset direction before the next one starts.',
-        icon: BarChart3,
-      },
-      {
-        path: '/ai-planner',
-        label: 'AI Planner',
-        section: 'Personal OS',
-        description: 'Turn a goal into projects and tasks with AI-assisted planning.',
-        icon: Bot,
       },
     ],
   },
@@ -108,6 +54,13 @@ export const navigationSections = [
         icon: BriefcaseBusiness,
       },
       {
+        path: '/invoices',
+        label: 'Invoices & Cash',
+        section: 'Client Ops',
+        description: 'Monitor billed work, collections, and overdue payments.',
+        icon: FileText,
+      },
+      {
         path: '/contacts',
         label: 'Contacts',
         section: 'Client Ops',
@@ -115,33 +68,85 @@ export const navigationSections = [
         icon: Users,
       },
       {
-        path: '/invoices',
-        label: 'Invoices',
+        path: '/expenses',
+        label: 'Expenses',
         section: 'Client Ops',
-        description: 'Monitor billed work, collections, and overdue payments.',
-        icon: FileText,
+        description: 'Track software, ads, travel, and business spending.',
+        icon: Receipt,
       },
       {
-        path: '/reminders',
-        label: 'Reminders',
+        path: '/tax',
+        label: 'TDS & Tax',
         section: 'Client Ops',
-        description: 'Keep follow-ups and time-sensitive actions from slipping.',
-        icon: BellRing,
+        description: 'Monitor TDS credits, advance tax, and financial-year estimates.',
+        icon: Calculator,
       },
     ],
   },
   {
-    label: 'Utilities',
+    label: 'Life OS',
     items: [
       {
-        path: '/integrations',
-        label: 'Integrations',
-        section: 'Utilities',
-        description: 'Connect the workspace to outside tools and services.',
-        icon: Globe,
+        path: '/goals',
+        label: 'Goals',
+        section: 'Life OS',
+        description: 'Track long-term outcomes and the progress behind them.',
+        icon: Target,
+      },
+      {
+        path: '/projects',
+        label: 'Projects',
+        section: 'Life OS',
+        description: 'Manage active projects connected to your goals.',
+        icon: FolderOpen,
+      },
+      {
+        path: '/tasks',
+        label: 'Tasks Backlog',
+        section: 'Life OS',
+        description: 'Organize and complete the concrete work on your plate.',
+        icon: ListTodo,
       },
     ],
   },
+  {
+    label: 'Discipline',
+    items: [
+      {
+        path: '/journal',
+        label: 'Reflect',
+        section: 'Discipline',
+        description: 'Capture thoughts, notes, and daily reflection.',
+        icon: NotebookPen,
+      },
+      {
+        path: '/weekly-review',
+        label: 'Weekly Review',
+        section: 'Discipline',
+        description: 'Review the week and reset direction before the next one starts.',
+        icon: BarChart3,
+      },
+      {
+        path: '/ai-planner',
+        label: 'AI Strategist',
+        section: 'Discipline',
+        description: 'Turn a goal into projects and tasks with AI-assisted planning.',
+        icon: Bot,
+      },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      {
+        path: '/settings',
+        label: 'Settings',
+        section: 'Workspace',
+        description: 'Personalize invoices, business identity, and workspace defaults.',
+        icon: Settings2,
+      },
+    ],
+  }
 ];
 
 export const navigationItems = navigationSections.flatMap((section) => section.items);
@@ -151,7 +156,6 @@ export function getRouteMeta(pathname) {
     if (item.path === '/') {
       return pathname === '/';
     }
-
     return pathname === item.path || pathname.startsWith(`${item.path}/`);
   });
 

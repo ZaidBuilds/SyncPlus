@@ -1,8 +1,8 @@
 import AiPlanner from '@/pages/AiPlanner';
 import Calendar from '@/pages/Calendar';
 import Contacts from '@/pages/Contacts';
-import DailyExecution from '@/pages/DailyExecution';
 import Dashboard from '@/pages/Dashboard';
+import Expenses from '@/pages/Expenses';
 import Goals from '@/pages/Goals';
 import Habits from '@/pages/Habits';
 import Integrations from '@/pages/Integrations';
@@ -11,13 +11,15 @@ import Journal from '@/pages/Journal';
 import Pipeline from '@/pages/Pipeline';
 import Projects from '@/pages/Projects';
 import Reminders from '@/pages/Reminders';
+import Settings from '@/pages/Settings';
 import Tasks from '@/pages/Tasks';
+import TaxCenter from '@/pages/TaxCenter';
+import Today from '@/pages/Today';
 import WeeklyReview from '@/pages/WeeklyReview';
 
 export const appRoutes = [
   { path: '/', component: Dashboard },
-  { path: '/dashboard', component: Dashboard },
-  { path: '/daily', component: DailyExecution },
+  { path: '/daily', component: Today },
   { path: '/goals', component: Goals },
   { path: '/projects', component: Projects },
   { path: '/tasks', component: Tasks },
@@ -29,14 +31,17 @@ export const appRoutes = [
   { path: '/pipeline', component: Pipeline },
   { path: '/contacts', component: Contacts },
   { path: '/invoices', component: Invoices },
+  { path: '/expenses', component: Expenses },
+  { path: '/tax', component: TaxCenter },
   { path: '/reminders', component: Reminders },
   { path: '/integrations', component: Integrations },
+  { path: '/settings', component: Settings },
 ];
 
 export const legacyRedirects = [
   { path: '/welcome', to: '/' },
+  { path: '/dashboard', to: '/' },
   { path: '/vision', to: '/goals' },
-  { path: '/today', to: '/daily' },
   { path: '/systems', to: '/projects' },
   { path: '/review', to: '/weekly-review' },
 ];
