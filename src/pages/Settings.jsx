@@ -33,8 +33,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="page-frame space-y-6">
-      <section className="soft-panel p-6 md:p-8">
+    <div className="p-5 max-w-5xl mx-auto space-y-5">
+      <section className="bg-white border border-border rounded-xl p-5 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p className="section-label text-primary/80">Settings</p>
@@ -59,7 +59,7 @@ export default function Settings() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <div className="soft-panel p-6">
+        <div className="bg-white border border-border rounded-xl p-5">
           <div className="flex items-center gap-2">
             <Palette size={16} className="text-primary" />
             <p className="text-sm font-semibold">Brand and business identity</p>
@@ -101,7 +101,7 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
-          <div className="soft-panel p-6">
+          <div className="bg-white border border-border rounded-xl p-5">
             <div className="flex items-center gap-2">
               <ReceiptText size={16} className="text-primary" />
               <p className="text-sm font-semibold">Invoice defaults</p>
@@ -132,7 +132,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="soft-panel p-6">
+          <div className="bg-white border border-border rounded-xl p-5">
             <p className="text-sm font-semibold">Payment details</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div>

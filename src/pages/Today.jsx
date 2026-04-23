@@ -167,8 +167,8 @@ export default function Today() {
 
   if (loading) {
     return (
-      <div className="page-frame">
-        <div className="glass-panel flex min-h-[420px] items-center justify-center rounded-[32px]">
+      <div className="p-5 max-w-5xl mx-auto space-y-5">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-border rounded-xl flex min-h-[420px] items-center justify-center">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
             Loading today’s operating surface…
@@ -180,8 +180,8 @@ export default function Today() {
 
   if (error || !snapshot) {
     return (
-      <div className="page-frame">
-        <div className="soft-panel p-8">
+      <div className="p-5 max-w-5xl mx-auto space-y-5">
+        <div className="bg-white border border-border rounded-xl p-8">
           <p className="section-label text-destructive">Today</p>
           <h1 className="mt-4 font-display text-3xl font-semibold">The daily system could not load.</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{error}</p>
@@ -191,9 +191,9 @@ export default function Today() {
   }
 
   return (
-    <div className="page-frame space-y-6">
+    <div className="p-5 max-w-5xl mx-auto space-y-6">
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-        <div className="soft-panel mesh-card p-6 md:p-8">
+        <div className="bg-white border border-border rounded-xl p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <p className="section-label text-primary/80">Live OS</p>
@@ -284,14 +284,14 @@ export default function Today() {
         </div>
 
         <div className="space-y-6">
-          <div className="soft-panel p-6">
+          <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="section-label">Pillars</p>
                 <h2 className="mt-2 text-xl font-semibold">What needs your energy today</h2>
               </div>
-              <Link to="/vision" className="text-sm font-medium text-primary hover:underline">
-                Open Vision
+              <Link to="/goals" className="text-sm font-medium text-primary hover:underline">
+                Open Goals
               </Link>
             </div>
 
@@ -306,13 +306,13 @@ export default function Today() {
                     {area.label}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
+                    <span className="rounded-full border border-border px-2.5 py-1">
                       {area.activeGoals} goals
                     </span>
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
+                    <span className="rounded-full border border-border px-2.5 py-1">
                       {area.openTasks} open tasks
                     </span>
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
+                    <span className="rounded-full border border-border px-2.5 py-1">
                       {area.activeHabits} habits
                     </span>
                   </div>
@@ -321,7 +321,7 @@ export default function Today() {
             </div>
           </div>
 
-          <div className="soft-panel p-6">
+          <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center gap-2">
               <NotebookPen size={16} className="text-primary" />
               <p className="text-sm font-semibold">Reflection status</p>
@@ -335,7 +335,7 @@ export default function Today() {
                 : 'Write the day down while it is still honest. Reflection is part of the operating system, not an afterthought.'}
             </p>
             <Link
-              to={journalEntry ? '/review?panel=daily' : '/review'}
+              to="/weekly-review"
               className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
               Open Review
@@ -346,17 +346,17 @@ export default function Today() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="soft-panel overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-border/70 px-6 py-5">
+        <div className="bg-white border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-5">
             <div>
               <p className="section-label">Unified Queue</p>
               <h2 className="mt-2 text-2xl font-semibold">Everything pulling on today</h2>
             </div>
-            <Link to="/systems" className="text-sm font-medium text-primary hover:underline">
-              Open Systems
+            <Link to="/tasks" className="text-sm font-medium text-primary hover:underline">
+              Open Tasks
             </Link>
           </div>
-          <div className="divide-y divide-border/70">
+          <div className="divide-y divide-border">
             {focusItems.length === 0 && (
               <p className="px-6 py-8 text-sm text-muted-foreground">
                 The queue is clear. Protect time for deep work or open Vision and raise the next meaningful target.
@@ -412,17 +412,17 @@ export default function Today() {
         </div>
 
         <div className="space-y-6">
-          <div className="soft-panel overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
+          <div className="bg-white border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border px-6 py-5">
               <div>
                 <p className="section-label">Schedule</p>
                 <h2 className="mt-2 text-2xl font-semibold">Time blocks</h2>
               </div>
-              <Link to="/systems?tab=tasks" className="text-sm font-medium text-primary hover:underline">
-                Plan deeper
+              <Link to="/calendar" className="text-sm font-medium text-primary hover:underline">
+                Open Calendar
               </Link>
             </div>
-            <div className="divide-y divide-border/70">
+            <div className="divide-y divide-border">
               {todayBlocks.length === 0 && (
                 <p className="px-6 py-8 text-sm text-muted-foreground">
                   No blocks are scheduled yet. Put one protected block on the calendar before adding more tasks.

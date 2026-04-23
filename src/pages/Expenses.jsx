@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Receipt, Search, TrendingDown } from 'lucide-react';
+import { Plus, Search, TrendingDown } from 'lucide-react';
 import { dataClient } from '@/lib/dataClient';
 import { cn } from '@/lib/utils';
 
@@ -224,10 +224,10 @@ export default function Expenses() {
   }
 
   return (
-    <div className="page-frame space-y-6">
+    <div className="p-5 max-w-4xl mx-auto space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="section-label">Freelance Ops</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Freelance Ops</p>
           <h1 className="mt-2 text-3xl font-semibold">Expenses</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Track business spending like software, ads, travel, and contractor costs.
@@ -246,25 +246,25 @@ export default function Expenses() {
         </button>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="soft-panel p-5">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Total tracked</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.total)}</p>
           <p className="mt-2 text-sm text-muted-foreground">All recorded freelancer expenses.</p>
         </div>
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">This month</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.monthTotal)}</p>
           <p className="mt-2 text-sm text-muted-foreground">Current monthly spending load.</p>
         </div>
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Largest category</p>
           <p className="mt-3 text-3xl font-semibold capitalize">{summary.topCategory.replace('_', ' ')}</p>
           <p className="mt-2 text-sm text-muted-foreground">Biggest cost bucket right now.</p>
         </div>
-      </section>
+      </div>
 
-      <section className="soft-panel p-5">
+      <div className="bg-white border border-border rounded-xl p-5">
         <div className="flex flex-wrap gap-3">
           <div className="relative min-w-[240px] flex-1">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -334,27 +334,7 @@ export default function Expenses() {
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="soft-panel p-5">
-          <div className="flex items-center gap-2">
-            <Receipt size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Automation opportunity</p>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            This page can later sync from a Google Sheet or a Gmail receipt parser so every expense
-            lands here automatically instead of being entered by hand.
-          </p>
-        </div>
-        <div className="soft-panel p-5">
-          <p className="text-sm font-semibold">Level up</p>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Next engineering step: attach receipt images and OCR metadata so expenses become
-            audit-ready, not just manually logged.
-          </p>
-        </div>
-      </section>
+      </div>
 
       {modalOpen && (
         <ExpenseModal

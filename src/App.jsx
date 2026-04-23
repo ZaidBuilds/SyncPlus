@@ -7,12 +7,13 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import PageNotFound from '@/lib/PageNotFound';
 import { queryClientInstance } from '@/lib/query-client';
+import { ThemeProvider } from '@/lib/ThemeContext';
 import { appRoutes, legacyRedirects } from '@/app/routes';
 
 function LoadingScreen({ label }) {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="glass-panel w-full max-w-sm rounded-3xl p-8 text-center">
+      <div className="w-full max-w-sm rounded-3xl border border-white/70 bg-white/75 p-8 text-center shadow-xl backdrop-blur-xl">
         <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
         <p className="mt-4 text-sm text-muted-foreground">{label}</p>
       </div>
@@ -23,9 +24,9 @@ function LoadingScreen({ label }) {
 function AccessError({ message }) {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="glass-panel w-full max-w-lg rounded-3xl p-8">
+      <div className="w-full max-w-lg rounded-3xl border border-white/70 bg-white/75 p-8 shadow-xl backdrop-blur-xl">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">SyncPlus</p>
-        <h1 className="mt-4 font-display text-3xl text-foreground">App connection issue</h1>
+        <h1 className="mt-4 text-3xl font-semibold">App connection issue</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           {message || 'The workspace could not complete its startup checks.'}
         </p>
@@ -81,13 +82,15 @@ function AuthenticatedApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -248,7 +248,7 @@ export function buildTodayFocusItems(snapshot) {
         area_id: task.area_id,
         score: getTaskScore(task, today),
         tone: task.priority === 'high' ? 'critical' : task.priority === 'medium' ? 'steady' : 'light',
-        link: '/systems?tab=tasks',
+        link: '/tasks',
         record: task,
       });
     });
@@ -273,7 +273,7 @@ export function buildTodayFocusItems(snapshot) {
         area_id: reminder.area_id || 'work',
         score: overdue ? 98 : 83,
         tone: overdue ? 'critical' : 'steady',
-        link: '/systems?tab=work',
+        link: '/reminders',
         record: reminder,
       });
     });
@@ -296,7 +296,7 @@ export function buildTodayFocusItems(snapshot) {
         area_id: 'money',
         score: invoice.status === 'overdue' ? 100 : 78 - daysAway,
         tone: invoice.status === 'overdue' ? 'critical' : 'steady',
-        link: '/systems?tab=money',
+        link: '/invoices',
         record: invoice,
       });
     });
@@ -319,7 +319,7 @@ export function buildTodayFocusItems(snapshot) {
         area_id: 'work',
         score: 68 + Math.min(inactiveDays, 14),
         tone: inactiveDays >= 7 ? 'critical' : 'steady',
-        link: '/systems?tab=work',
+        link: '/pipeline',
         record: deal,
       });
     });
@@ -336,7 +336,7 @@ export function buildTodayFocusItems(snapshot) {
         area_id: habit.area_id,
         score: 52,
         tone: 'light',
-        link: '/systems?tab=habits',
+        link: '/habits',
         record: habit,
       });
     });
@@ -396,6 +396,195 @@ export function getWeeklyMetrics(snapshot, weekOffset = 0) {
 export function getTodayJournalEntry(snapshot) {
   const today = new Date();
   return snapshot.journalEntries.find((entry) => isSameDay(new Date(entry.date), today)) || null;
+}
+
+export function calculateHabitStreak(habits, habitLogs, habitId) {
+  const today = new Date();
+  const todayKey = format(today, 'yyyy-MM-dd');
+  
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return 0;
+  
+  const logsForHabit = habitLogs
+    .filter(log => log.habit_id === habitId && log.completed)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  
+  if (logsForHabit.length === 0) return 0;
+  
+  let streak = 0;
+  let currentDate = startOfDay(today);
+  
+  const completedDates = new Set(logsForHabit.map(log => log.date));
+  
+  if (!completedDates.has(todayKey)) {
+    const yesterdayKey = format(addDays(today, -1), 'yyyy-MM-dd');
+    if (!completedDates.has(yesterdayKey)) {
+      return 0;
+    }
+    currentDate = addDays(currentDate, -1);
+  }
+  
+  while (true) {
+    const dateKey = format(currentDate, 'yyyy-MM-dd');
+    if (completedDates.has(dateKey)) {
+      streak++;
+      currentDate = addDays(currentDate, -1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+}
+
+export function calculateTotalStreak(habits, habitLogs) {
+  if (habits.length === 0) return 0;
+  
+  const streaks = habits.map(habit => calculateHabitStreak(habits, habitLogs, habit.id));
+  return Math.min(...streaks);
+}
+
+export function getTodayProgress(snapshot) {
+  const today = new Date();
+  const todayKey = format(today, 'yyyy-MM-dd');
+  
+  const habitsCompletedToday = snapshot.habitLogs.filter(
+    log => log.date === todayKey && log.completed
+  ).length;
+  const totalHabits = snapshot.habits.length;
+  const habitsPercent = totalHabits > 0 ? Math.round((habitsCompletedToday / totalHabits) * 100) : 0;
+  
+  const tasksDueToday = snapshot.tasks.filter(
+    task => task.due_date === todayKey && task.status !== 'done'
+  ).length;
+  const tasksDoneToday = snapshot.tasks.filter(
+    task => task.due_date === todayKey && task.status === 'done'
+  ).length;
+  const totalTasksDue = tasksDueToday + tasksDoneToday;
+  const tasksPercent = totalTasksDue > 0 ? Math.round((tasksDoneToday / totalTasksDue) * 100) : 0;
+  
+  return {
+    habitsCompleted: habitsCompletedToday,
+    totalHabits,
+    habitsPercent,
+    tasksDone: tasksDoneToday,
+    tasksDue: tasksDueToday,
+    tasksPercent,
+  };
+}
+
+export function getWeeklyData(snapshot) {
+  const today = new Date();
+  const weekData = [];
+  
+  for (let i = 6; i >= 0; i--) {
+    const date = addDays(today, -i);
+    const dateKey = format(date, 'yyyy-MM-dd');
+    
+    const habitsDone = snapshot.habitLogs.filter(
+      log => log.date === dateKey && log.completed
+    ).length;
+    
+    const tasksDone = snapshot.tasks.filter(
+      task => task.due_date === dateKey && task.status === 'done'
+    ).length;
+    
+    weekData.push({
+      date: dateKey,
+      dayName: format(date, 'EEE'),
+      habitsDone,
+      tasksDone,
+      totalHabits: snapshot.habits.length,
+    });
+  }
+  
+  return weekData;
+}
+
+// Dashboard helper functions
+export function getTodayCalendarBlocks(snapshot) {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const blocks = snapshot.calendarBlocks || [];
+  return blocks
+    .filter(b => b.date === today)
+    .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+}
+
+export function getThisWeeksTasks(snapshot) {
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const tasks = snapshot.tasks || [];
+
+  return tasks.filter(task => {
+    if (!task.due_date) return false;
+    const due = new Date(task.due_date);
+    return isAfter(due, weekStart) && isBefore(due, weekEnd);
+  });
+}
+
+export function getUserName(snapshot) {
+  let name = 'Friend';
+  if (snapshot.onboarding?.user_name) {
+    name = snapshot.onboarding.user_name;
+  } else if (snapshot.contacts && Array.isArray(snapshot.contacts) && snapshot.contacts.length > 0) {
+    const first = snapshot.contacts[0];
+    if (first.first_name) {
+      name = first.first_name;
+    }
+  }
+  return String(name).split(' ')[0];
+}
+
+export function getStreakStats(habits, habitLogs) {
+  if (!habits || habits.length === 0) return { current: 0, best: 0, avg: 0, percentToNext: 0 };
+  
+  const streaks = habits.map(habit => calculateHabitStreak(habits, habitLogs || [], habit.id));
+  const current = Math.min(...streaks);
+  const best = Math.max(...streaks);
+  const avg = streaks.length > 0 ? Math.round(streaks.reduce((a, b) => a + b, 0) / streaks.length) : 0;
+  const percentToNext = current >= 30 ? 100 : Math.round((current / 30) * 100);
+  
+  return { current, best, avg, percentToNext };
+}
+
+export function getMotivationMessage(streak, progressPercent, overdueCount) {
+  if (overdueCount > 3) return `${overdueCount} overdue tasks — let's tackle them first!`;
+  if (streak >= 30) return "Incredible! You're building unbreakable habits.";
+  if (streak >= 14) return "Two weeks strong! Keep that momentum going! 🔥";
+  if (streak >= 7) return "One week down! You're on FIRE! 🔥";
+  if (progressPercent >= 80) return "Almost there! Finish your day strong.";
+  if (progressPercent >= 50) return "Halfway there! Keep pushing forward.";
+  if (streak === 0 && progressPercent === 0) return "Start today — every great habit begins with a single step.";
+  return "One day at a time. You've got this! 💪";
+}
+
+export function getOpenInvoiceTotal(snapshot) {
+  const invoices = snapshot.invoices || [];
+  return invoices
+    .filter(inv => ['sent', 'overdue'].includes(inv.status))
+    .reduce((sum, inv) => sum + (inv.total || 0), 0);
+}
+
+export function getActiveProjectsCount(snapshot) {
+  const projects = snapshot.projects || [];
+  return projects.filter(p => !['completed', 'cancelled'].includes(p.status)).length;
+}
+
+export function getTodayOverdueCount(snapshot) {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const tasks = snapshot.tasks || [];
+  return tasks.filter(
+    t => t.due_date < today && t.status !== 'done'
+  ).length;
+}
+
+export function getWeeklyGoalProgress(snapshot) {
+  const thisWeekTasks = getThisWeeksTasks(snapshot);
+  const doneThisWeek = thisWeekTasks.filter(t => t.status === 'done').length;
+  const total = thisWeekTasks.length;
+  const percent = total > 0 ? Math.round((doneThisWeek / total) * 100) : 0;
+  return { done: doneThisWeek, total, percent };
 }
 
 export { getAreaMeta };

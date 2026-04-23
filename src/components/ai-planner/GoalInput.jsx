@@ -26,7 +26,7 @@ export default function GoalInput({ onGenerate, loading }) {
   return (
     <div className="bg-card border border-border rounded-xl p-5 space-y-3">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block">
-        🎯 What's your goal?
+        🎯 What&apos;s your goal?
       </label>
       <textarea
         className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-background resize-none placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"

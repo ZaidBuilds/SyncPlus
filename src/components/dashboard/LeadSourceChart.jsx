@@ -1,5 +1,3 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { MessageSquare, Instagram, Users, Globe, Linkedin, Phone, HelpCircle } from 'lucide-react';
 
 const SOURCE_CONFIG = {
   whatsapp: { label: 'WhatsApp', color: '#22c55e' },

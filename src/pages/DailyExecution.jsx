@@ -163,7 +163,7 @@ export default function DailyExecution() {
       {habits.length > 0 && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold flex items-center gap-1.5"><Flame size={14} className="text-orange-500" /> Today's Habits</h2>
+            <h2 className="text-sm font-semibold flex items-center gap-1.5"><Flame size={14} className="text-orange-500" /> Today&apos;s Habits</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
             {habits.map(habit => {
@@ -183,7 +183,7 @@ export default function DailyExecution() {
       {calBlocks.length > 0 && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <h2 className="text-sm font-semibold flex items-center gap-1.5"><Calendar size={14} /> Today's Schedule</h2>
+            <h2 className="text-sm font-semibold flex items-center gap-1.5"><Calendar size={14} /> Today&apos;s Schedule</h2>
             <Link to="/calendar" className="text-xs text-primary hover:underline">+ Add Block</Link>
           </div>
           <div className="divide-y divide-border">
@@ -201,7 +201,7 @@ export default function DailyExecution() {
       {/* Journal CTA */}
       <Link to="/journal" className="flex items-center justify-between bg-card border border-border rounded-xl px-5 py-4 hover:shadow-sm transition-shadow">
         <div>
-          <p className="text-sm font-semibold">{journalEntry ? '📝 Journal Entry Saved' : '📝 Write Today\'s Journal'}</p>
+          <p className="text-sm font-semibold">{journalEntry ? '📝 Journal Entry Saved' : '📝 Write Today&apos;s Journal'}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{journalEntry ? 'Tap to review or update' : 'Reflect on your day'}</p>
         </div>
         <span className="text-xs text-primary">→</span>

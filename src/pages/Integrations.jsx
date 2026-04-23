@@ -89,7 +89,7 @@ export default function Integrations() {
 
       <div className="mt-8 bg-primary/5 border border-primary/20 rounded-xl p-5">
         <h3 className="text-sm font-semibold">Request an Integration</h3>
-        <p className="text-xs text-muted-foreground mt-1">Need a tool that's not listed? We're building more integrations every week.</p>
+        <p className="text-xs text-muted-foreground mt-1">Need a tool that&apos;s not listed? We&apos;re building more integrations every week.</p>
         <a href="mailto:hello@syncplus.app" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:underline">
           <Mail size={12} /> Request integration →
         </a>

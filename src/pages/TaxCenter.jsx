@@ -234,7 +234,7 @@ export default function TaxCenter() {
   }
 
   return (
-    <div className="page-frame space-y-6">
+    <div className="p-5 max-w-5xl mx-auto space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="section-label">Freelance Ops</p>
@@ -257,22 +257,22 @@ export default function TaxCenter() {
       </div>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">FY revenue</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.fyRevenue)}</p>
           <p className="mt-2 text-sm text-muted-foreground">{currentFinancialYear} billed revenue.</p>
         </div>
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">44ADA estimate</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.presumptiveIncome)}</p>
           <p className="mt-2 text-sm text-muted-foreground">50% planning estimate of taxable income.</p>
         </div>
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">TDS + advance tax</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.taxCovered)}</p>
           <p className="mt-2 text-sm text-muted-foreground">Already covered for this financial year.</p>
         </div>
-        <div className="soft-panel p-5">
+        <div className="bg-white border border-border rounded-xl p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Reserve target</p>
           <p className="mt-3 text-3xl font-semibold">{formatMoney(summary.reserveTarget)}</p>
           <p className="mt-2 text-sm text-muted-foreground">Simple planning buffer, not legal advice.</p>
@@ -280,15 +280,15 @@ export default function TaxCenter() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="soft-panel overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
+        <div className="bg-white border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border px-6 py-5">
             <div>
               <p className="section-label">Credits</p>
               <h2 className="mt-2 text-2xl font-semibold">TDS entries</h2>
             </div>
             <p className="text-sm text-muted-foreground">{currentFinancialYear}</p>
           </div>
-          <div className="divide-y divide-border/70">
+          <div className="divide-y divide-border">
             {tdsEntries.length === 0 && (
               <p className="px-6 py-8 text-sm text-muted-foreground">No TDS entries yet.</p>
             )}
@@ -317,12 +317,12 @@ export default function TaxCenter() {
         </div>
 
         <div className="space-y-6">
-          <div className="soft-panel overflow-hidden">
-            <div className="border-b border-border/70 px-6 py-5">
+          <div className="bg-white border border-border rounded-xl overflow-hidden">
+            <div className="border-b border-border px-6 py-5">
               <p className="section-label">Payments</p>
               <h2 className="mt-2 text-2xl font-semibold">Advance tax</h2>
             </div>
-            <div className="divide-y divide-border/70">
+<div className="divide-y divide-border">
               {advanceTaxPayments.length === 0 && (
                 <p className="px-6 py-8 text-sm text-muted-foreground">No advance tax payments yet.</p>
               )}
@@ -348,7 +348,7 @@ export default function TaxCenter() {
             </div>
           </div>
 
-          <div className="soft-panel p-6">
+          <div className="bg-white border border-border rounded-xl p-6">
             <div className="flex items-center gap-2">
               <Calculator size={16} className="text-primary" />
               <p className="text-sm font-semibold">Freelancer tax stack</p>

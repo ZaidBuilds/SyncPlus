@@ -18,7 +18,7 @@ export default function PageNotFound() {
         </div>
 
         <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight">
-          The page "{pageName}" could not be found.
+          The page &quot;{pageName}&quot; could not be found.
         </h1>
         <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
           The link may be outdated or the route may not exist in this version of the app.

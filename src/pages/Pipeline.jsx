@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, DollarSign, Calendar, LayoutGrid, Table2, IndianRupee } from 'lucide-react';
+import { Plus, Calendar, LayoutGrid, Table2, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import DealModal from '@/components/deals/DealModal';
 import PipelineSheet from '@/components/pipeline/PipelineSheet';

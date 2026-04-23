@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { BarChart2, RefreshCw, Sparkles, Target, Plus, Trash2, Check, Pencil } from 'lucide-react';
+import { BarChart2, RefreshCw, Sparkles, Target, Plus, Trash2, Check } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { generateWeeklyReview } from '@/lib/localInsights';
@@ -297,7 +297,7 @@ export default function WeeklyReview() {
             ))}
           </div>
         ) : (
-          <p className="px-5 py-4 text-sm text-muted-foreground">Click "Generate Review" to get a local weekly analysis based on your current data.</p>
+          <p className="px-5 py-4 text-sm text-muted-foreground">Click &quot;Generate Review&quot; to get a local weekly analysis based on your current data.</p>
         )}
       </div>
     </div>

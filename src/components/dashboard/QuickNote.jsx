@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { dataClient } from '@/lib/dataClient';
 import { StickyNote, Send, MessageSquare, Phone, Mail, Users } from 'lucide-react';
 

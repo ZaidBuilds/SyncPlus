@@ -39,9 +39,5 @@ export const appRoutes = [
 ];
 
 export const legacyRedirects = [
-  { path: '/welcome', to: '/' },
   { path: '/dashboard', to: '/' },
-  { path: '/vision', to: '/goals' },
-  { path: '/systems', to: '/projects' },
-  { path: '/review', to: '/weekly-review' },
 ];

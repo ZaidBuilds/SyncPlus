@@ -54,7 +54,7 @@ export default function AiFollowupPanel({ deals }) {
         )}
         {!suggestions && !loading && staleDeals.length > 0 && (
           <p className="px-5 py-4 text-sm text-muted-foreground">
-            {staleDeals.length} deal{staleDeals.length > 1 ? 's' : ''} haven't been touched in 3+ days. Generate a local action list to move them forward.
+            {staleDeals.length} deal{staleDeals.length > 1 ? 's' : ''} haven&apos;t been touched in 3+ days. Generate a local action list to move them forward.
           </p>
         )}
         {loading && (

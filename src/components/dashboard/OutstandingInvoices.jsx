@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { IndianRupee, ArrowRight, AlertCircle } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { IndianRupee, ArrowRight } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 
 export default function OutstandingInvoices({ invoices }) {
   const outstanding = invoices

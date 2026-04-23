@@ -52,7 +52,7 @@ export default function LifeOSWidget() {
       {/* Today's Tasks */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today's Tasks</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today&apos;s Tasks</h3>
           <Link to="/daily" className="text-xs text-primary flex items-center gap-1 hover:underline">All <ArrowRight size={11} /></Link>
         </div>
         <div className="divide-y divide-border">

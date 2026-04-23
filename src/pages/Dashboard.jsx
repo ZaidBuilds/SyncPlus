@@ -1,509 +1,757 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import {
-  ArrowRight,
-  BriefcaseBusiness,
-  CalendarDays,
-  Calculator,
-  CircleDollarSign,
-  Clock3,
-  FolderOpen,
-  Goal,
-  LayoutGrid,
-  Receipt,
+  Plus,
+  Flame,
+  ListTodo,
+  Calendar,
   Target,
+  DollarSign,
+  ChevronRight,
+  Trophy,
+  Sparkles,
+  BriefcaseBusiness,
+  CheckCircle2,
+  Receipt,
+  ArrowUpRight,
+  TrendingUp,
+  AlertCircle,
 } from 'lucide-react';
-import { format, isBefore, parseISO, startOfDay } from 'date-fns';
-import { buildTodayFocusItems, formatCurrency, loadLifeOsSnapshot } from '@/lib/workspace';
+import {
+  loadLifeOsSnapshot,
+  formatCurrency,
+  getTodayProgress,
+  getWeeklyData,
+  getTodayCalendarBlocks,
+  getUserName,
+  getStreakStats,
+  getMotivationMessage,
+  getOpenInvoiceTotal,
+  getActiveProjectsCount,
+  getTodayOverdueCount,
+  getWeeklyGoalProgress,
+} from '@/lib/workspace';
+import { dataClient } from '@/lib/dataClient';
+import RevenueChart from '@/components/dashboard/RevenueChart';
+import PipelineFunnel from '@/components/dashboard/PipelineFunnel';
+import OutstandingInvoices from '@/components/dashboard/OutstandingInvoices';
+import AgingDeals from '@/components/dashboard/AgingDeals';
+import RevenueGoal from '@/components/dashboard/RevenueGoal';
+import LifeOSWidget from '@/components/dashboard/LifeOSWidget';
 
-const quickLinks = [
-  {
-    title: 'Daily Execution',
-    description: 'Run tasks, habits, and schedule from one page.',
-    to: '/daily',
-    icon: Goal,
-  },
-  {
-    title: 'Pipeline',
-    description: 'Check active deals and move follow-ups faster.',
-    to: '/pipeline',
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: 'Calendar',
-    description: 'Protect time blocks before the day gets noisy.',
-    to: '/calendar',
-    icon: CalendarDays,
-  },
-  {
-    title: 'Expenses',
-    description: 'Track spend across software, travel, and freelancer ops.',
-    to: '/expenses',
-    icon: Receipt,
-  },
-  {
-    title: 'TDS & Tax',
-    description: 'Review TDS credits, advance tax, and FY planning.',
-    to: '/tax',
-    icon: Calculator,
-  },
+const MOTIVATIONAL_QUOTES = [
+  "The only way is forward. — Marcus Aurelius",
+  "Small steps every day lead to big changes.",
+  "Progress, not perfection.",
+  "What gets scheduled gets done.",
+  "Trust the process.",
+  "Your future self will thank you.",
 ];
 
-const stageLabels = {
-  lead: 'Lead',
-  proposal: 'Proposal',
-  meeting: 'Meeting',
-  contracted: 'Contracted',
-  negotiating: 'Negotiating',
-  closed: 'Closed',
-  lost: 'Lost',
+/* ────────────────────────── Animation helpers ────────────────────────── */
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 },
+  },
 };
 
-function formatDueLabel(value) {
-  if (!value) {
-    return 'No due date';
-  }
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 260, damping: 20 },
+  },
+};
 
-  const parsed = parseISO(value);
+/* ────────────────────────── Sub-components ────────────────────────── */
 
-  if (Number.isNaN(parsed.getTime())) {
-    return 'No due date';
-  }
+function StreakHero({ streak, best, avg, percentToNext }) {
+  let gradient = 'from-gray-400 to-gray-500';
+  if (streak >= 30) gradient = 'from-yellow-400 to-orange-500';
+  else if (streak >= 14) gradient = 'from-red-500 to-red-600';
+  else if (streak >= 7) gradient = 'from-orange-500 to-red-500';
+  else if (streak >= 1) gradient = 'from-orange-400 to-orange-500';
 
-  return value.length > 10 ? format(parsed, 'd MMM, h:mm a') : format(parsed, 'd MMM');
+  const circumference = 2 * Math.PI * 45;
+  const strokeDashoffset = circumference - (percentToNext / 100) * circumference;
+  const gradientId = `streak-gradient-${Math.min(streak, 30)}`;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className={`h-2 bg-gradient-to-r ${gradient}`} />
+      <div className="p-5">
+        <div className="flex items-start justify-between mb-3">
+
+function StreakHero({ streak, best, avg, percentToNext }) {
+  const gradient = useMemo(() => {
+    if (streak >= 30) return 'from-yellow-400 to-orange-500';
+    if (streak >= 14) return 'from-red-500 to-red-600';
+    if (streak >= 7) return 'from-orange-500 to-red-500';
+    if (streak >= 1) return 'from-orange-400 to-orange-500';
+    return 'from-gray-400 to-gray-500';
+  }, [streak]);
+
+  const circumference = 2 * Math.PI * 45;
+  const strokeDashoffset = circumference - (percentToNext / 100) * circumference;
+  const gradientId = 'streak-ring-gradient'; // stable unique ID
+
+  const stops = useMemo(() => {
+    if (streak >= 30) return ['#fbbf24', '#f59e0b'];
+    if (streak >= 14) return ['#dc2626', '#b91c1c'];
+    if (streak >= 7) return ['#ea580c', '#c2410c'];
+    return ['#fb923c', '#f97316'];
+  }, [streak]);
+
+  return (
+    <motion.div variants={cardVariants} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className={`h-2 bg-gradient-to-r ${gradient}`} />
+      <div className="p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Flame size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Current Streak</p>
+              <p className="text-2xl font-bold text-gray-900">{streak} days</p>
+            </div>
+          </div>
+          {streak >= 7 && (
+            <div className="px-2 py-1 bg-yellow-100 rounded-full text-xs font-semibold text-yellow-700 flex items-center gap-1">
+              <Trophy size={12} /> Best: {best}d
+            </div>
+          )}
+        </div>
+
+        {/* Progress ring */}
+        <div className="relative flex items-center justify-center my-4">
+          <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="6" />
+            <circle
+              cx="50" cy="50" r="45" fill="none"
+              stroke={`url(#${gradientId})`}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-1000 ease-out"
+            />
+            <defs>
+              <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={stops[0]} />
+                <stop offset="100%" stopColor={stops[1]} />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div className="absolute flex flex-col items-center">
+            <span className="text-3xl font-bold text-gray-900">{percentToNext}%</span>
+            <span className="text-xs text-gray-500">to 30-day</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+          <div>
+            <span className="font-semibold">Best:</span> {best}d
+          </div>
+          <div>
+            <span className="font-semibold">Average:</span> {avg}d
+          </div>
+          {streak > 0 && (
+            <div className="flex items-center gap-1 text-orange-600 font-medium">
+              <Sparkles size={12} /> On fire!
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
-function getPriorityTone(priority) {
-  if (priority === 'high') {
-    return 'text-rose-600 bg-rose-50 border-rose-100';
-  }
+function TaskCheckItem({ item, onToggle }) {
+  const isDone = item.record?.status === 'done' || item.completed;
+  const isHabit = item.kind === 'habit';
 
-  if (priority === 'medium') {
-    return 'text-amber-700 bg-amber-50 border-amber-100';
-  }
-
-  return 'text-slate-600 bg-slate-50 border-slate-200';
+  return (
+    <label className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${isDone ? 'opacity-60' : ''}`}>
+      <input
+        type="checkbox"
+        className="mt-0.5 w-5 h-5 rounded border-gray-300 accent-emerald-600"
+        checked={isDone}
+        onChange={() => onToggle(item)}
+      />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+          {item.title}
+        </p>
+        {item.subtitle && (
+          <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+        )}
+      </div>
+      {isHabit && (
+        <Flame size={14} className="text-orange-500 flex-shrink-0" />
+      )}
+    </label>
+  );
 }
 
-function getProjectStatusTone(status) {
-  if (status === 'in_progress') {
-    return 'text-primary bg-primary/10 border-primary/15';
+function FocusBoard({ items, onToggle, onQuickAdd }) {
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const handleQuickAdd = useCallback(() => {
+    if (newTaskTitle.trim()) {
+      onQuickAdd(newTaskTitle);
+      setNewTaskTitle('');
+      setShowQuickAdd(false);
+    }
+  }, [newTaskTitle, onQuickAdd]);
+
+  const incompleteCount = items.filter(i => !i.completed).length;
+
+  return (
+    <motion.div variants={cardVariants} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Today&apos;s Focus</p>
+          <h3 className="font-semibold text-gray-900 mt-0.5">
+            {incompleteCount} item{incompleteCount !== 1 ? 's' : ''} remaining
+          </h3>
+        </div>
+        <button
+          onClick={() => setShowQuickAdd(!showQuickAdd)}
+          className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 flex items-center gap-1 transition-colors"
+        >
+          <Plus size={14} /> Add
+        </button>
+      </div>
+
+      {showQuickAdd && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+        >
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={e => setNewTaskTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
+            placeholder="What needs to be done?"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            autoFocus
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleQuickAdd}
+              className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+            >
+              Add Task
+            </button>
+        <Link
+          to="/daily"
+          className="flex items-center justify-center gap-1 mt-4 pt-3 border-t border-gray-200 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+        >
+          View all in Today <ChevronRight size={14} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function WeeklyMomentum({ weeklyData }) {
+  const max = Math.max(...weeklyData.map(d => d.habitsDone + d.tasksDone), 1);
+  const today = new Date();
+  const todayStr = format(today, 'yyyy-MM-dd');
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Weekly Momentum</p>
+          <h3 className="font-semibold text-gray-900 mt-0.5">Last 7 days</h3>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-gray-500">
+          <span>Tasks + Habits</span>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-1 h-48 px-1">
+        {weeklyData.map((day, i) => {
+          const count = day.habitsDone + day.tasksDone;
+          const height = Math.max((count / max) * 100, 4); // Min 4% height for visibility
+          const isToday = day.date === todayStr;
+          const dayName = format(new Date(day.date), 'EEE');
+          
+          return (
+            <div key={day.date} className="flex-1 flex flex-col items-center gap-2 group">
+              {/* Count label (above bar) */}
+              {count > 0 && (
+                <span className="text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {count}
+                </span>
+              )}
+              
+              {/* Bar container */}
+              <div className="w-full flex items-end justify-center h-40">
+                <div className="relative w-full max-w-[32px] flex flex-col justify-end">
+                  <div
+                    className={`w-full rounded-t-md transition-all duration-700 cursor-pointer relative ${isToday ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
+                    style={{
+                      height: `${height}%`,
+                      background: `linear-gradient(to top, ${count > 0 ? 'rgb(16, 185, 129)' : 'rgb(209, 213, 219)'} 0%, ${count > 0 ? 'rgb(5, 150, 105)' : 'rgb(229, 231, 235)'} 100%)`
+                    }}
+                    title={`${dayName}: ${count} completions`}
+                  />
+                </div>
+              </div>
+              
+              {/* Day label */}
+              <span className={`text-xs font-medium ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>
+                {dayName}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TodaySchedule({ blocks }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Today&apos;s Schedule</p>
+          <h3 className="font-semibold text-gray-900 mt-0.5">
+            {blocks.length} block{blocks.length !== 1 ? 's' : ''} scheduled
+          </h3>
+        </div>
+        <Link
+          to="/calendar"
+          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+        >
+          View calendar
+        </Link>
+      </div>
+
+      <div className="space-y-2">
+        {blocks.length === 0 ? (
+          <div className="py-6 text-center">
+            <p className="text-gray-400 text-sm">No blocks scheduled</p>
+            <Link to="/calendar" className="text-xs text-emerald-600 hover:underline mt-1 inline-block">
+              Add time block
+            </Link>
+          </div>
+        ) : (
+          blocks.slice(0, 4).map((block) => {
+            const startHour = parseInt(block.start_time.split(':')[0], 10);
+            const period = startHour < 12 ? 'AM' : 'PM';
+            const displayHour = startHour % 12 || 12;
+            
+            return (
+              <div
+                key={block.id}
+                className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+              >
+                <div className="flex flex-col items-center min-w-[50px]">
+                  <span className="text-sm font-bold text-gray-900">{displayHour}{period[0]}</span>
+                  <span className="text-xs text-gray-500">{block.start_time}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{block.title}</p>
+                  <p className="text-xs text-gray-500">{block.end_time}</p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {blocks.length > 4 && (
+        <p className="text-xs text-gray-400 text-center mt-3">
+          +{blocks.length - 4} more blocks
+        </p>
+      )}
+
+      <Link
+        to="/calendar"
+        className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-gray-100 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+      >
+        <Plus size={14} /> Add block
+      </Link>
+    </div>
+  );
+}
+
+function QuickStatsRow({ tasksDue, projectsActive, invoiceTotal, streak }) {
+  const stats = [
+    { label: 'Tasks due', value: tasksDue, to: '/tasks', icon: ListTodo, color: 'text-blue-600' },
+    { label: 'Projects', value: projectsActive, to: '/projects', icon: Target, color: 'text-purple-600' },
+    { label: 'Unpaid', value: `₹${formatCurrency(invoiceTotal)}`, to: '/invoices', icon: DollarSign, color: 'text-amber-600' },
+    { label: 'Streak', value: `${streak}d`, to: '/habits', icon: Flame, color: 'text-orange-600' },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <Link
+            key={stat.label}
+            to={stat.to}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          >
+            <Icon size={14} className={stat.color} />
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-gray-900">{stat.value}</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wide">{stat.label}</span>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function WeeklyGoalProgress({ weeklyProgress }) {
+  const { done, total, percent } = weeklyProgress;
+  const color = percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  
+  if (total === 0) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-gray-500 uppercase tracking-wide">Weekly Goal</p>
+        <span className="text-sm font-bold text-gray-900">{done}/{total} tasks</span>
+      </div>
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <p className="text-xs text-gray-500 mt-1">{percent}% complete</p>
+    </div>
+  );
+}
+
+function InlineQuickAdd({ onAdd }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+
+  const handleAdd = () => {
+    if (text.trim()) {
+      onAdd(text);
+      setText('');
+      setOpen(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors"
+      >
+        <Plus size={14} /> Quick add task...
+      </button>
+    );
   }
 
-  if (status === 'on_hold') {
-    return 'text-amber-700 bg-amber-50 border-amber-100';
-  }
-
-  return 'text-slate-600 bg-slate-50 border-slate-200';
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && handleAdd()}
+        placeholder="e.g., Call client tomorrow at 3pm"
+        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        autoFocus
+      />
+      <button
+        onClick={handleAdd}
+        className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700"
+      >
+        Add
+      </button>
+      <button
+        onClick={() => { setOpen(false); setText(''); }}
+        className="px-3 py-2 text-gray-500 hover:text-gray-700"
+      >
+        ✕
+      </button>
+    </div>
+  );
 }
 
 export default function Dashboard() {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [newTaskText, setNewTaskText] = useState('');
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('syncplus-user') || '{}');
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-        const nextSnapshot = await loadLifeOsSnapshot();
-        if (!cancelled) {
-          setSnapshot(nextSnapshot);
-          setError(null);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError?.message || 'Could not load the dashboard.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
+    loadLifeOsSnapshot().then((data) => {
+      setSnapshot(data);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Failed to load snapshot:', err);
+      setError(err.message || 'Failed to load data');
+      setLoading(false);
+    });
   }, []);
 
-  const dashboardData = useMemo(() => {
-    if (!snapshot) {
-      return null;
-    }
+  const data = useMemo(() => {
+    if (!snapshot) return null;
 
-    const today = startOfDay(new Date());
-    const todayFocus = buildTodayFocusItems(snapshot).slice(0, 5);
-    const openTasks = snapshot.tasks.filter((task) => task.status !== 'done');
-    const overdueTasks = openTasks.filter(
-      (task) => task.due_date && isBefore(parseISO(task.due_date), today)
-    );
-    const activeProjects = snapshot.projects
-      .filter((project) => !['completed', 'cancelled'].includes(project.status))
-      .sort((a, b) => {
-        if (!a.deadline && !b.deadline) return 0;
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return a.deadline.localeCompare(b.deadline);
+    // Get all incomplete tasks and habits for today
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    
+    const tasks = snapshot.tasks
+      .filter(t => t.status !== 'done' && (!t.due_date || t.due_date === todayKey))
+      .slice(0, 7)
+      .map(t => ({ 
+        id: `task-${t.id}`, 
+        title: t.title, 
+        kind: 'task', 
+        record: t,
+        completed: t.status === 'done',
+        subtitle: t.due_date ? `Due ${t.due_date}` : ''
+      }));
+
+    const habits = snapshot.habits
+      .filter(h => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const log = snapshot.habitLogs.find(l => l.habit_id === h.id && l.date === today);
+        return !log?.completed;
       })
-      .slice(0, 3);
-    const activeGoals = snapshot.goals
-      .filter((goal) => goal.status === 'active')
-      .sort((a, b) => {
-        if (!a.deadline && !b.deadline) return 0;
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return a.deadline.localeCompare(b.deadline);
-      })
-      .slice(0, 3);
-    const openDeals = snapshot.deals.filter((deal) => !['closed', 'lost'].includes(deal.stage));
-    const overdueInvoices = snapshot.invoices.filter((invoice) => invoice.status === 'overdue');
-    const outstandingInvoices = snapshot.invoices.filter((invoice) =>
-      ['sent', 'overdue'].includes(invoice.status)
-    );
-    const upcomingBlocks = snapshot.calendarBlocks
-      .filter((block) => block.date === format(today, 'yyyy-MM-dd'))
-      .sort((a, b) => a.start_time.localeCompare(b.start_time))
-      .slice(0, 4);
-    const stageSummary = ['lead', 'proposal', 'meeting', 'negotiating', 'contracted'].map((stage) => {
-      const deals = openDeals.filter((deal) => deal.stage === stage);
-      return {
-        stage,
-        label: stageLabels[stage],
-        count: deals.length,
-        value: deals.reduce((sum, deal) => sum + (deal.value || 0), 0),
-      };
-    });
+      .slice(0, 4)
+      .map(h => ({ 
+        id: `habit-${h.id}`, 
+        title: h.name, 
+        kind: 'habit', 
+        record: h,
+        completed: false 
+      }));
+
+    const items = [...tasks, ...habits];
+
+    const streakStats = getStreakStats(snapshot.habits, snapshot.habitLogs);
+    const progress = getTodayProgress(snapshot);
+    const weekly = getWeeklyData(snapshot);
+    const todayBlocks = getTodayCalendarBlocks(snapshot).slice(0, 4);
+    const weeklyProgress = getWeeklyGoalProgress(snapshot);
+    const overdueCount = getTodayOverdueCount(snapshot);
 
     return {
-      todayFocus,
-      openTasks,
-      overdueTasks,
-      activeProjects,
-      activeGoals,
-      openDeals,
-      overdueInvoices,
-      outstandingInvoices,
-      upcomingBlocks,
-      stageSummary,
-      totalPipelineValue: openDeals.reduce((sum, deal) => sum + (deal.value || 0), 0),
-      totalOutstandingValue: outstandingInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0),
+      userName: getUserName(snapshot),
+      streak: streakStats.current,
+      streakBest: streakStats.best,
+      streakAvg: streakStats.avg,
+      streakPercent: streakStats.percentToNext,
+      progress,
+      weekly,
+      items,
+      todayBlocks,
+      weeklyProgress,
+      overdueCount,
+      invoiceTotal: getOpenInvoiceTotal(snapshot),
+      projectsActive: getActiveProjectsCount(snapshot),
     };
   }, [snapshot]);
 
+  const handleToggle = async (item) => {
+    if (!item.record) return;
+
+    try {
+      if (item.kind === 'habit') {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const existing = snapshot.habitLogs.find(l => l.habit_id === item.record.id && l.date === today);
+        
+        if (existing) {
+          await dataClient.entities.HabitLog.update(existing.id, { completed: !existing.completed });
+        } else {
+          await dataClient.entities.HabitLog.create({
+            habit_id: item.record.id,
+            date: today,
+            completed: true,
+          });
+        }
+      } else if (item.kind === 'task') {
+        await dataClient.entities.Task.update(item.record.id, { 
+          status: item.record.status === 'done' ? 'todo' : 'done' 
+        });
+      }
+
+      const fresh = await loadLifeOsSnapshot();
+      setSnapshot(fresh);
+    } catch (e) {
+      console.error('Failed to update:', e);
+    }
+  };
+
+  const handleQuickAdd = async (title) => {
+    try {
+      // Simple task creation with today's date
+      await dataClient.entities.Task.create({
+        title,
+        status: 'todo',
+        due_date: format(new Date(), 'yyyy-MM-dd'),
+      });
+      const fresh = await loadLifeOsSnapshot();
+      setSnapshot(fresh);
+    } catch (e) {
+      console.error('Failed to add task:', e);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="page-frame">
-        <div className="soft-panel flex min-h-[420px] items-center justify-center">
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            Loading the command center...
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex items-center gap-2 text-gray-500">
+          <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+          Loading your command center...
         </div>
       </div>
     );
   }
 
-  if (error || !dashboardData) {
+  if (error) {
     return (
-      <div className="page-frame">
-        <div className="soft-panel p-8">
-          <p className="section-label text-destructive">Dashboard</p>
-          <h1 className="mt-4 font-display text-3xl font-semibold">The dashboard could not load.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-500 font-semibold">Failed to load dashboard</p>
+          <p className="text-sm text-gray-500 mt-1">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-3 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">No data available</p>
+      </div>
+    );
+  }
+
+  const today = new Date();
+  const hour = today.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const quote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+  const progressPercent = data.progress.totalHabits + data.progress.tasksDue > 0
+    ? Math.round(((data.progress.habitsCompleted + data.progress.tasksDone) / 
+       (data.progress.totalHabits + data.progress.tasksDue)) * 100)
+    : 0;
+  const motivation = getMotivationMessage(data.streak, progressPercent, data.overdueCount);
 
   return (
-    <div className="page-frame space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-        <div className="soft-panel p-6 md:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl">
-              <p className="section-label text-primary/80">Minimal Command Center</p>
-              <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight">
-                See what matters, then move fast.
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                {greeting}, {data.userName}! 👋
               </h1>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                A cleaner operating view for your day, your pipeline, and your money. No clutter,
-                just the next things that need attention.
-              </p>
+              <p className="text-gray-600 mt-1 text-lg">{format(today, 'EEEE, MMMM d, yyyy')}</p>
             </div>
-
-            <div className="rounded-[24px] border border-border/70 bg-secondary/40 px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Today
-              </p>
-              <p className="mt-2 font-display text-2xl font-semibold">{format(new Date(), 'EEEE')}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{format(new Date(), 'd MMMM yyyy')}</p>
+            <div className="flex items-center gap-3">
+              {data.streak >= 7 && (
+                <div className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold flex items-center gap-1">
+                  🔥 {data.streak} day streak
+                </div>
+              )}
             </div>
           </div>
+          
+          <p className="text-sm text-gray-600 italic max-w-2xl">&quot;{quote}&quot;</p>
+          <p className="text-sm text-emerald-600 font-medium">{motivation}</p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[24px] border border-border/70 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Focus Queue
-              </p>
-              <p className="mt-3 text-3xl font-semibold">{dashboardData.todayFocus.length}</p>
-              <p className="mt-2 text-sm text-muted-foreground">high-signal items to move now</p>
-            </div>
-            <div className="rounded-[24px] border border-border/70 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Open Tasks
-              </p>
-              <p className="mt-3 text-3xl font-semibold">{dashboardData.openTasks.length}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {dashboardData.overdueTasks.length} already overdue
-              </p>
-            </div>
-            <div className="rounded-[24px] border border-border/70 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Pipeline Value
-              </p>
-              <p className="mt-3 text-3xl font-semibold">
-                Rs {formatCurrency(dashboardData.totalPipelineValue)}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {dashboardData.openDeals.length} active deals
-              </p>
-            </div>
-            <div className="rounded-[24px] border border-border/70 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Outstanding Cash
-              </p>
-              <p className="mt-3 text-3xl font-semibold">
-                Rs {formatCurrency(dashboardData.totalOutstandingValue)}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {dashboardData.overdueInvoices.length} overdue invoices
-              </p>
-            </div>
+          {/* Quick Stats Row */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <QuickStatsRow 
+              tasksDue={(data.progress.tasksDue - data.progress.tasksDone) || 0}
+              projectsActive={data.projectsActive}
+              invoiceTotal={data.invoiceTotal}
+              streak={data.streak}
+            />
           </div>
         </div>
 
-        <div className="soft-panel p-6">
-          <div className="flex items-center gap-2">
-            <LayoutGrid size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Quick Access</p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Focus Board + Schedule */}
+          <div className="lg:col-span-2 space-y-6">
+            <FocusBoard 
+              items={data.items} 
+              onToggle={handleToggle}
+              onQuickAdd={handleQuickAdd}
+            />
+            
+            <TodaySchedule blocks={data.todayBlocks} />
           </div>
-          <div className="mt-5 space-y-3">
-            {quickLinks.map((item) => {
-              const Icon = item.icon;
 
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="flex items-start gap-3 rounded-[22px] border border-border/70 bg-white px-4 py-4 transition-colors hover:bg-secondary/50"
-                >
-                  <span className="rounded-2xl bg-primary/10 p-3 text-primary">
-                    <Icon size={16} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{item.title}</span>
-                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </span>
-                  <ArrowRight size={16} className="mt-1 text-muted-foreground" />
+          {/* Right Column - Streak + Momentum + Goals */}
+          <div className="space-y-6">
+            <StreakHero 
+              streak={data.streak}
+              best={data.streakBest}
+              avg={data.streakAvg}
+              percentToNext={data.streakPercent}
+            />
+            
+            <WeeklyMomentum weeklyData={data.weekly} />
+            
+            <WeeklyGoalProgress weeklyProgress={data.weeklyProgress} />
+
+            {/* Quick Links (compact) */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Access</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Link to="/habits" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
+                  <Flame size={14} className="text-orange-500" /> Habits
                 </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="soft-panel overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
-            <div>
-              <p className="section-label">Today</p>
-              <h2 className="mt-2 text-2xl font-semibold">Next actions</h2>
-            </div>
-            <Link to="/daily" className="text-sm font-medium text-primary hover:underline">
-              Open daily view
-            </Link>
-          </div>
-
-          <div className="divide-y divide-border/70">
-            {dashboardData.todayFocus.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-muted-foreground">
-                The queue is clear. Protect time for a strategic task or review your goals.
-              </p>
-            ) : (
-              dashboardData.todayFocus.map((item) => (
-                <div key={item.id} className="flex flex-wrap items-center gap-4 px-6 py-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold">{item.title}</p>
-                      {item.record?.priority && (
-                        <span
-                          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${getPriorityTone(item.record.priority)}`}
-                        >
-                          {item.record.priority}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                      {formatDueLabel(item.due)}
-                    </p>
-                    <Link to={item.link} className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline">
-                      Open
-                      <ArrowRight size={13} />
-                    </Link>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="soft-panel overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
-            <div>
-              <p className="section-label">Schedule</p>
-              <h2 className="mt-2 text-2xl font-semibold">Today on calendar</h2>
-            </div>
-            <Link to="/calendar" className="text-sm font-medium text-primary hover:underline">
-              Open calendar
-            </Link>
-          </div>
-
-          <div className="divide-y divide-border/70">
-            {dashboardData.upcomingBlocks.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-muted-foreground">
-                No blocks scheduled yet. Add one protected work block before the day fills up.
-              </p>
-            ) : (
-              dashboardData.upcomingBlocks.map((block) => (
-                <div key={block.id} className="flex items-start gap-3 px-6 py-4">
-                  <div className="rounded-2xl bg-secondary p-3 text-muted-foreground">
-                    <Clock3 size={15} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold">{block.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {block.start_time} - {block.end_time}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr_1fr]">
-        <div className="soft-panel p-6">
-          <div className="flex items-center gap-2">
-            <Target size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Goals</p>
-          </div>
-          <div className="mt-5 space-y-3">
-            {dashboardData.activeGoals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active goals yet.</p>
-            ) : (
-              dashboardData.activeGoals.map((goal) => (
-                <div key={goal.id} className="rounded-[22px] border border-border/70 bg-white p-4">
-                  <p className="text-sm font-semibold">{goal.title}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{goal.description}</p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    {goal.deadline ? `Due ${formatDueLabel(goal.deadline)}` : 'No deadline'}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-          <Link to="/goals" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-            Open goals
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-
-        <div className="soft-panel p-6">
-          <div className="flex items-center gap-2">
-            <FolderOpen size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Projects</p>
-          </div>
-          <div className="mt-5 space-y-3">
-            {dashboardData.activeProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active projects yet.</p>
-            ) : (
-              dashboardData.activeProjects.map((project) => (
-                <div key={project.id} className="rounded-[22px] border border-border/70 bg-white p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold">{project.title}</p>
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${getProjectStatusTone(project.status)}`}
-                    >
-                      {project.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{project.description}</p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    {project.deadline ? `Due ${formatDueLabel(project.deadline)}` : 'No deadline'}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-          <Link
-            to="/projects"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-          >
-            Open projects
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-
-        <div className="soft-panel p-6">
-          <div className="flex items-center gap-2">
-            <CircleDollarSign size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Pipeline and cash</p>
-          </div>
-          <div className="mt-5 space-y-3">
-            {dashboardData.stageSummary.map((stage) => (
-              <div
-                key={stage.stage}
-                className="flex items-center justify-between rounded-[22px] border border-border/70 bg-white px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{stage.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{stage.count} deals</p>
-                </div>
-                <p className="text-sm font-semibold">Rs {formatCurrency(stage.value)}</p>
+                <Link to="/tasks" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
+                  <ListTodo size={14} className="text-blue-500" /> Tasks
+                </Link>
+                <Link to="/calendar" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
+                  <Calendar size={14} className="text-purple-500" /> Calendar
+                </Link>
+                <Link to="/journal" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
+                  <Sparkles size={14} className="text-yellow-500" /> Journal
+                </Link>
               </div>
-            ))}
-
-            <div className="rounded-[22px] border border-rose-100 bg-rose-50 px-4 py-4">
-              <p className="text-sm font-semibold text-rose-700">
-                {dashboardData.overdueInvoices.length} overdue invoice
-                {dashboardData.overdueInvoices.length === 1 ? '' : 's'}
-              </p>
-              <p className="mt-1 text-sm text-rose-600">
-                Clear collection pressure early to protect the week.
-              </p>
             </div>
           </div>
-          <div className="mt-5 flex gap-4">
-            <Link to="/pipeline" className="text-sm font-medium text-primary hover:underline">
-              Open pipeline
-            </Link>
-            <Link to="/invoices" className="text-sm font-medium text-primary hover:underline">
-              Open invoices
-            </Link>
-          </div>
         </div>
-      </section>
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-400 pt-4 border-t border-gray-200">
+          SyncPlus • {format(today, 'MMMM yyyy')} • {data.items.length} item{data.items.length !== 1 ? 's' : ''} due today
+        </div>
+      </div>
     </div>
   );
 }

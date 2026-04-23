@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, Target, CheckCircle2, Archive, Pencil, Trash2, ChevronRight } from 'lucide-react';
+import { Plus, Target, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS = {

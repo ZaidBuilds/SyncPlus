@@ -118,7 +118,7 @@ export default function Habits() {
       {habits.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Today's Progress</span>
+            <span className="text-sm font-medium">Today&apos;s Progress</span>
             <span className="text-sm font-bold text-orange-500">{Math.round((completedToday / habits.length) * 100)}%</span>
           </div>
           <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
@@ -133,7 +133,7 @@ export default function Habits() {
           <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
             <Flame size={32} className="text-orange-300 mx-auto mb-3" />
             <p className="text-sm font-medium">No habits yet</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Add habits once — they'll appear here every day automatically.</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">Add habits once — they&apos;ll appear here every day automatically.</p>
             <button onClick={() => setModal({})} className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90">+ Add your first habit</button>
           </div>
         )}

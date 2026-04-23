@@ -37,7 +37,7 @@ export default function TodaysFocusBar({ reminders, invoices, onNewDeal, onNewIn
         </Link>
       )}
       {!hasFocus && (
-        <span className="text-xs text-muted-foreground">✅ You're all caught up today</span>
+        <span className="text-xs text-muted-foreground">✅ You&apos;re all caught up today</span>
       )}
     </div>
   );

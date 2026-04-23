@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, Check, Bell, Calendar, X, Trash2 } from 'lucide-react';
-import { format, isBefore, isAfter, addDays } from 'date-fns';
+import { Plus, Check, Calendar, X, Trash2 } from 'lucide-react';
+import { format, isBefore, isAfter } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 function ReminderModal({ reminder, onSave, onDelete, onClose }) {

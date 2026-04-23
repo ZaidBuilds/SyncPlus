@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, Search, Mail, Phone, X, Trash2, MessageSquare, Tag } from 'lucide-react';
+import { Plus, Search, Mail, Phone, X, Trash2, MessageSquare } from 'lucide-react';
 import NotesList from '@/components/notes/NotesList';
 import { cn } from '@/lib/utils';
 

@@ -67,11 +67,11 @@ export default function Invoices() {
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Collected</p>
-          <p className="text-xl font-semibold mt-1 text-green-600">${totalPaid.toLocaleString()}</p>
+          <p className="text-xl font-semibold mt-1 text-green-600">₹{totalPaid.toLocaleString()}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Outstanding</p>
-          <p className="text-xl font-semibold mt-1 text-amber-600">${totalUnpaid.toLocaleString()}</p>
+          <p className="text-xl font-semibold mt-1 text-amber-600">₹{totalUnpaid.toLocaleString()}</p>
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function Invoices() {
                 <td className="px-3 py-3 text-muted-foreground">{inv.contact_name || '—'}</td>
                 <td className="px-3 py-3 text-muted-foreground hidden sm:table-cell">{inv.issue_date ? format(new Date(inv.issue_date), 'MMM d') : '—'}</td>
                 <td className="px-3 py-3 text-muted-foreground hidden sm:table-cell">{inv.due_date ? format(new Date(inv.due_date), 'MMM d') : '—'}</td>
-                <td className="px-3 py-3 text-right font-medium">${(inv.total || 0).toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-medium">₹{(inv.total || 0).toLocaleString()}</td>
                 <td className="px-3 py-3">
                   <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', STATUS_STYLES[inv.status] || STATUS_STYLES.draft)}>
                     {inv.status || 'draft'}

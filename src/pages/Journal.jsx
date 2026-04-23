@@ -81,7 +81,7 @@ export default function Journal() {
       {loading ? (
         <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
       ) : isFuture ? (
-        <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-sm">Can't journal the future 😄</div>
+        <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-sm">Can&apos;t journal the future 😄</div>
       ) : (
         <div className="space-y-3">
           {/* Mood — pick first */}

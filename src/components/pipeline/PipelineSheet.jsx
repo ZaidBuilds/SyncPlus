@@ -1,4 +1,4 @@
-import { IndianRupee, Plus, Calendar } from 'lucide-react';
+import { IndianRupee, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +52,7 @@ export default function PipelineSheet({ deals, stages, sheetTab, setSheetTab, on
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-muted-foreground py-10 text-sm">No deals. Click "Add row" to create one.</td></tr>
+              <tr><td colSpan={7} className="text-center text-muted-foreground py-10 text-sm">No deals. Click &quot;Add row&quot; to create one.</td></tr>
             )}
             {filtered.map(deal => (
               <tr key={deal.id} onClick={() => onEdit(deal)}
