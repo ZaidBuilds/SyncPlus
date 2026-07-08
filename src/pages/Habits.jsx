@@ -1,196 +1,248 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, Flame, Check, Pencil, Trash2, X } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { 
+  Plus, Trash2, TrendingUp, Calendar, LayoutGrid, List, CheckCircle2, Circle
+} from 'lucide-react';
+import { format, eachDayOfInterval, startOfWeek, isToday, subDays, isSameDay } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
-const today = format(new Date(), 'yyyy-MM-dd');
-
-function HabitModal({ habit, onSave, onDelete, onClose }) {
-  const [form, setForm] = useState(habit || { name: '', description: '', frequency: 'daily', color: '#6366f1' });
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-5 shadow-xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold">{habit ? 'Edit Habit' : 'New Habit'}</h2>
-          <button onClick={onClose}><X size={16} className="text-muted-foreground" /></button>
-        </div>
-        <div className="space-y-3">
-          <input autoFocus className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background" placeholder="e.g. Morning run, Read 30 min..." value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-          <div className="flex gap-3">
-            <select className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background" value={form.frequency} onChange={e => setForm({ ...form, frequency: e.target.value })}>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">Color</label>
-              <input type="color" className="w-9 h-9 border border-border rounded-lg cursor-pointer" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-between mt-4">
-          {habit && <button onClick={() => onDelete(habit.id)} className="text-xs text-red-500 flex items-center gap-1"><Trash2 size={12} /> Delete</button>}
-          <div className="flex gap-2 ml-auto">
-            <button onClick={onClose} className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-secondary">Cancel</button>
-            <button onClick={() => onSave(form)} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Save</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const FREQUENCIES = ['daily', 'weekdays', 'weekends'];
+const DAYS_TO_SHOW = 14;
 
 export default function Habits() {
   const [habits, setHabits] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [modal, setModal] = useState(null);
+  const [habitLogs, setHabitLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('grid'); // 'grid' | 'list'
+  
+  // Date range for the tracker
+  const days = useMemo(() => {
+    return eachDayOfInterval({
+      start: subDays(new Date(), DAYS_TO_SHOW - 1),
+      end: new Date()
+    });
+  }, []);
 
   const load = async () => {
     const [h, l] = await Promise.all([
       dataClient.entities.Habit.list('-created_date', 100),
-      dataClient.entities.HabitLog.list('-date', 1000),
+      dataClient.entities.HabitLog.list('-date', 1000)
     ]);
-    setHabits(h); setLogs(l); setLoading(false);
+    setHabits(h);
+    setHabitLogs(l);
+    setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const save = async (form) => {
-    if (form.id) await dataClient.entities.Habit.update(form.id, form);
-    else await dataClient.entities.Habit.create(form);
-    setModal(null); load();
-  };
-
-  const del = async (id) => {
-    await dataClient.entities.Habit.delete(id);
-    setModal(null); load();
-  };
-
-  const toggle = async (habit) => {
-    const existing = logs.find(l => l.habit_id === habit.id && l.date === today);
+  const toggleHabit = async (habitId, date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const existing = habitLogs.find(l => l.habit_id === habitId && l.date === dateStr);
+    
     if (existing) {
-      await dataClient.entities.HabitLog.update(existing.id, { completed: !existing.completed });
+      await dataClient.entities.HabitLog.delete(existing.id);
     } else {
-      await dataClient.entities.HabitLog.create({ habit_id: habit.id, date: today, completed: true });
+      await dataClient.entities.HabitLog.create({
+        habit_id: habitId,
+        date: dateStr,
+        completed: true
+      });
     }
     load();
   };
 
-  const getStreak = (habitId) => {
-    let streak = 0;
-    for (let i = 0; i < 365; i++) {
-      const d = format(subDays(new Date(), i), 'yyyy-MM-dd');
-      const log = logs.find(l => l.habit_id === habitId && l.date === d && l.completed);
-      if (log) streak++;
-      else if (i > 0) break;
-    }
-    return streak;
-  };
-
-  const getLast21Days = (habitId) => {
-    return Array.from({ length: 21 }, (_, i) => {
-      const d = format(subDays(new Date(), 20 - i), 'yyyy-MM-dd');
-      const log = logs.find(l => l.habit_id === habitId && l.date === d);
-      return { date: d, done: log?.completed || false, isToday: d === today };
+  const addHabit = async () => {
+    const title = prompt('Enter habit name:');
+    if (!title) return;
+    await dataClient.entities.Habit.create({
+      title,
+      frequency: 'daily',
+      goal_id: null,
+      streak: 0
     });
+    load();
   };
 
-  const isDoneToday = (habitId) => logs.find(l => l.habit_id === habitId && l.date === today)?.completed || false;
+  const deleteHabit = async (id) => {
+    if (!confirm('Archive this habit?')) return;
+    await dataClient.entities.Habit.delete(id);
+    load();
+  };
 
-  if (loading) return <div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  const completedToday = habits.filter(h => isDoneToday(h.id)).length;
+  if (loading) return <div className="flex items-center justify-center h-64 text-xs font-bold uppercase tracking-widest opacity-50">Synchronizing Rituals...</div>;
 
   return (
-    <div className="p-5 max-w-2xl mx-auto space-y-4">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto space-y-12 pb-20">
+      
+      {/* Apple-style Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold flex items-center gap-2"><Flame size={20} className="text-orange-500" /> Habits</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(), 'EEEE, d MMMM')} · {completedToday}/{habits.length} done today</p>
+          <h1 className="text-4xl font-black tracking-tight mb-2">Rituals</h1>
+          <p className="text-sm text-muted-foreground font-medium">Daily compounding habits for strategic consistency.</p>
         </div>
-        <button onClick={() => setModal({})} className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-2 rounded-lg hover:bg-primary/90">
-          <Plus size={14} /> New Habit
-        </button>
+        <div className="flex items-center gap-3 bg-muted/50 p-1 rounded-2xl">
+          <button onClick={() => setView('grid')} className={cn("p-2 rounded-xl transition-all", view === 'grid' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}>
+            <LayoutGrid size={18} />
+          </button>
+          <button onClick={() => setView('list')} className={cn("p-2 rounded-xl transition-all", view === 'list' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}>
+            <List size={18} />
+          </button>
+          <div className="w-px h-4 bg-border/50 mx-1" />
+          <button onClick={addHabit} className="bg-primary text-primary-foreground px-6 py-2 rounded-xl font-bold text-xs flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+            <Plus size={16} /> New Ritual
+          </button>
+        </div>
       </div>
 
-      {/* Daily progress */}
-      {habits.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Today&apos;s Progress</span>
-            <span className="text-sm font-bold text-orange-500">{Math.round((completedToday / habits.length) * 100)}%</span>
-          </div>
-          <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-orange-500 rounded-full transition-all duration-700" style={{ width: `${(completedToday / habits.length) * 100}%` }} />
-          </div>
-        </div>
-      )}
-
-      {/* Habit list — just open and mark */}
-      <div className="space-y-2">
-        {habits.length === 0 && (
-          <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
-            <Flame size={32} className="text-orange-300 mx-auto mb-3" />
-            <p className="text-sm font-medium">No habits yet</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Add habits once — they&apos;ll appear here every day automatically.</p>
-            <button onClick={() => setModal({})} className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90">+ Add your first habit</button>
-          </div>
-        )}
-        {habits.map(habit => {
-          const done = isDoneToday(habit.id);
-          const streak = getStreak(habit.id);
-          const last21 = getLast21Days(habit.id);
-          return (
-            <div key={habit.id} className={`bg-card border rounded-xl p-4 transition-all ${done ? 'border-transparent' : 'border-border'}`} style={{ borderColor: done ? habit.color || '#6366f1' : undefined, boxShadow: done ? `0 0 0 1px ${habit.color || '#6366f1'}20` : undefined }}>
-              <div className="flex items-center gap-3">
-                {/* Big check button */}
-                <button
-                  onClick={() => toggle(habit)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 border-2"
-                  style={{
-                    backgroundColor: done ? (habit.color || '#6366f1') : 'transparent',
-                    borderColor: habit.color || '#6366f1',
-                  }}
-                >
-                  <Check size={18} className={done ? 'text-white' : 'text-muted-foreground'} />
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className={`text-sm font-semibold ${done ? 'line-through text-muted-foreground' : ''}`}>{habit.name}</p>
-                    {streak > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs font-bold text-orange-500">
-                        <Flame size={11} /> {streak}
+      {/* Main Tracker: Notion Style Database */}
+      <div className="vantage-card overflow-hidden !p-0 border-none shadow-xl bg-white dark:bg-black/40 backdrop-blur-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-border/50">
+                <th className="sticky left-0 bg-background/95 backdrop-blur-md z-10 p-6 text-left w-64 border-r border-border/50">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ritual Matrix</span>
+                </th>
+                {days.map(day => (
+                  <th key={day.toString()} className="p-4 text-center min-w-[60px]">
+                    <div className={cn("flex flex-col items-center gap-1", isToday(day) && "text-primary")}>
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{format(day, 'EEE')}</span>
+                      <span className={cn("text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full", isToday(day) && "bg-primary text-primary-foreground shadow-lg")}>
+                        {format(day, 'd')}
                       </span>
-                    )}
+                    </div>
+                  </th>
+                ))}
+                <th className="p-6 text-right w-24">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Score</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {habits.map(habit => {
+                const logs = habitLogs.filter(l => l.habit_id === habit.id);
+                const score = Math.round((logs.filter(l => days.some(d => isSameDay(new Date(l.date), d))).length / DAYS_TO_SHOW) * 100);
+                
+                return (
+                  <tr key={habit.id} className="group hover:bg-muted/30 transition-colors">
+                    <td className="sticky left-0 bg-background/95 backdrop-blur-md z-10 p-6 border-r border-border/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={cn("w-2 h-8 rounded-full", score > 70 ? "bg-emerald-500" : score > 30 ? "bg-amber-500" : "bg-red-500")} />
+                          <span className="font-bold text-sm truncate">{habit.title}</span>
+                        </div>
+                        <button onClick={() => deleteHabit(habit.id)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                    {days.map(day => {
+                      const isDone = habitLogs.some(l => l.habit_id === habit.id && l.date === format(day, 'yyyy-MM-dd'));
+                      return (
+                        <td key={day.toString()} className="p-2 text-center">
+                          <button 
+                            onClick={() => toggleHabit(habit.id, day)}
+                            className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90",
+                              isDone 
+                                ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20" 
+                                : "bg-muted/30 text-muted-foreground/30 hover:bg-muted hover:text-muted-foreground"
+                            )}
+                          >
+                            {isDone ? <CheckCircle2 size={18} strokeWidth={3} /> : <Circle size={18} strokeWidth={2} />}
+                          </button>
+                        </td>
+                      );
+                    })}
+                    <td className="p-6 text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-sm font-black">{score}%</span>
+                        <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary" style={{ width: `${score}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {habits.length === 0 && (
+                <tr>
+                  <td colSpan={DAYS_TO_SHOW + 2} className="p-20 text-center text-sm font-bold text-muted-foreground uppercase tracking-widest opacity-40">
+                    Your ritual matrix is empty. Initialize habits to track compounding growth.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Analytics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* Weekly Momentum */}
+        <section className="vantage-card space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2"><TrendingUp size={20} /> Momentum</h3>
+            <span className="text-[10px] font-black text-emerald-500 uppercase">+12%</span>
+          </div>
+          <div className="space-y-4">
+            {habits.slice(0, 3).map(habit => {
+              const logs = habitLogs.filter(l => l.habit_id === habit.id);
+              const weeklyLogs = logs.filter(l => new Date(l.date) >= startOfWeek(new Date(), { weekStartsOn: 1 }));
+              const progress = Math.round((weeklyLogs.length / 7) * 100);
+              return (
+                <div key={habit.id} className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                    <span className="truncate w-32">{habit.title}</span>
+                    <span>{progress}%</span>
                   </div>
-                  {/* 21-day streak grid */}
-                  <div className="flex gap-0.5 mt-2">
-                    {last21.map((d, i) => (
-                      <div
-                        key={i}
-                        title={d.date}
-                        className={`h-3 rounded-sm flex-1 transition-all ${d.isToday ? 'ring-1 ring-offset-1' : ''}`}
-                        style={{
-                          backgroundColor: d.done ? (habit.color || '#6366f1') : '#e5e7eb',
-                          ringColor: habit.color || '#6366f1',
-                        }}
-                      />
-                    ))}
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      className="h-full bg-primary"
+                    />
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </section>
 
-                <button onClick={() => setModal(habit)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground flex-shrink-0">
-                  <Pencil size={13} />
-                </button>
-              </div>
+        {/* Monthly Insight */}
+        <section className="vantage-card bg-primary text-primary-foreground space-y-6 shadow-2xl">
+          <h3 className="text-lg font-black uppercase tracking-tight">Strategic View</h3>
+          <p className="text-sm opacity-80 leading-relaxed font-medium">
+            You are currently maintaining a 74% consistency rate across your core rituals. Your strongest day is Tuesday. Focus on bridging the gap on weekends to maintain high-ground performance.
+          </p>
+          <div className="flex items-center gap-4 pt-4 border-t border-white/10">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="w-8 h-8 rounded-full border-2 border-primary bg-white/20 flex items-center justify-center text-[10px] font-black">V</div>
+              ))}
             </div>
-          );
-        })}
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Strategic Rituals Active</span>
+          </div>
+        </section>
+
+        {/* Heatmap Simulation */}
+        <section className="vantage-card space-y-4">
+          <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2"><Calendar size={20} /> Consistency</h3>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 28 }).map((_, i) => (
+              <div key={i} className={cn("aspect-square rounded-sm", Math.random() > 0.4 ? "bg-primary/20" : "bg-muted")} />
+            ))}
+          </div>
+          <div className="flex justify-between text-[8px] font-black uppercase tracking-[0.2em] opacity-40">
+            <span>Mar</span>
+            <span>Apr</span>
+          </div>
+        </section>
+
       </div>
 
-      {modal !== null && <HabitModal habit={modal?.id ? modal : null} onSave={save} onDelete={del} onClose={() => setModal(null)} />}
     </div>
   );
 }

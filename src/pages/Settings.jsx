@@ -42,7 +42,7 @@ export default function Settings() {
               Personalize everything your way.
             </h1>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              Set your business identity, invoice defaults, and payment details once so SyncPlus
+              Set your business identity, invoice defaults, and payment details once so Vantage
               feels like your own freelancer operating system.
             </p>
           </div>

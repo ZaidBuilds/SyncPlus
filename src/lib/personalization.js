@@ -1,8 +1,8 @@
-const STORAGE_KEY = 'syncplus.personalization.v1';
+const STORAGE_KEY = 'vantage.personalization.v1';
 
 export const DEFAULT_PERSONALIZATION = {
-  workspace_name: 'SyncPlus',
-  brand_tagline: 'Freelance OS',
+  workspace_name: 'Vantage',
+  brand_tagline: 'Strategic Operating System',
   business_name: '',
   business_email: '',
   business_phone: '',
@@ -14,8 +14,8 @@ export const DEFAULT_PERSONALIZATION = {
   ifsc: '',
   upi_id: '',
   default_gst_rate: 18,
-  invoice_prefix: 'INV',
-  default_invoice_template: 'classic',
+  invoice_prefix: 'VTG',
+  default_invoice_template: 'vantage_elite',
   default_invoice_note: '',
 };
 

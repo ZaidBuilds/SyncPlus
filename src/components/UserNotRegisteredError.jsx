@@ -15,7 +15,7 @@ export default function UserNotRegisteredError() {
         </div>
 
         <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight">
-          This account is not registered for SyncPlus.
+          This account is not registered for Vantage.
         </h1>
         <p className="mt-4 text-sm leading-7 text-muted-foreground">
           The application loaded correctly, but your current user record does not have access to this workspace yet.

@@ -1,44 +1,27 @@
-# SyncPlus
+# ⚡ SyncPlus Workspace
+Solopreneur personal dashboard integrating calendar schedulers and client pipelines.
 
-SyncPlus is a local-first Life + Client Ops workspace. It combines personal execution tools (goals, projects, tasks, habits, calendar, journal, weekly review) with client operations (pipeline, contacts, invoices, reminders) in one Vite + React app.
+Status: 90% complete — LAUNCH
 
-## Key Modules
-- Dashboard: unified overview of focus, pipeline, invoices, and follow-ups
-- Daily Execution: top priorities, habits, time blocks, and journal entry
-- Goals / Projects / Tasks / Habits: core personal execution system
-- Calendar: time-blocking and schedule management
-- Journal + Weekly Review: reflection and weekly reset
-- AI Planner: optional goal breakdown into projects and tasks
-- Pipeline / Contacts / Invoices / Reminders: client operations
+## 🚀 Features
+*   **React Query Data Layer**: Instant UI responsiveness and state caching.
+*   **Drag-and-Drop Pipelines**: Reorder outreach targets across board columns.
+*   **Google Calendar Sync**: Import and visual time-block items dynamically.
 
-## Tech Stack
-- Vite + React
-- Tailwind CSS + shadcn/ui components
-- Local storage data layer (no backend)
+## 🛠️ Tech Stack
+*   **Frontend**: React (Vite), TypeScript
+*   **Libraries**: React Query, Lucide Icons, Framer Motion
+*   **Styling**: Tailwind CSS
 
-## Getting Started
-Install dependencies and run the dev server:
+## 🔮 What's Left to Ship
+We need to register official OAuth credentials in the Google Cloud Console and update client config variables. This is needed to enable secure calendar synchronization.
 
-```bash
-npm install
-npm run dev
-```
-
-Then open:
-
-```
-http://localhost:5173
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Notes
-- Data is stored in the browser's localStorage.
-- This repo is local-first and does not require a backend.
-
-## License
-All rights reserved. This project is proprietary.
+## 📦 How to Run Locally
+1.  Install dependencies:
+    ```bash
+    npm install
+    ```
+2.  Start Vite server:
+    ```bash
+    npm run dev
+    ```

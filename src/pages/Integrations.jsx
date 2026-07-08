@@ -4,7 +4,7 @@ const INTEGRATIONS = [
   {
     category: 'Communication',
     items: [
-      { name: 'Gmail', desc: 'Send emails directly from SyncPlus', icon: Mail, status: 'available', color: 'bg-red-50 text-red-500', link: 'https://mail.google.com' },
+      { name: 'Gmail', desc: 'Send emails directly from Vantage', icon: Mail, status: 'available', color: 'bg-red-50 text-red-500', link: 'https://mail.google.com' },
       { name: 'WhatsApp', desc: 'Open WhatsApp chat with clients', icon: MessageSquare, status: 'available', color: 'bg-green-50 text-green-500', link: 'https://web.whatsapp.com' },
     ]
   },
@@ -32,7 +32,7 @@ const INTEGRATIONS = [
   {
     category: 'Automation',
     items: [
-      { name: 'Zapier', desc: 'Connect SyncPlus to 5000+ apps', icon: Zap, status: 'coming_soon', color: 'bg-orange-50 text-orange-500' },
+      { name: 'Zapier', desc: 'Connect Vantage to 5000+ apps', icon: Zap, status: 'coming_soon', color: 'bg-orange-50 text-orange-500' },
       { name: 'Make (Integromat)', desc: 'Advanced workflow automation', icon: Zap, status: 'coming_soon', color: 'bg-purple-50 text-purple-500' },
     ]
   },
@@ -51,7 +51,7 @@ export default function Integrations() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-semibold">Integrations</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Connect your favourite tools to SyncPlus</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Connect your favourite tools to Vantage</p>
       </div>
 
       <div className="space-y-7">
@@ -90,7 +90,7 @@ export default function Integrations() {
       <div className="mt-8 bg-primary/5 border border-primary/20 rounded-xl p-5">
         <h3 className="text-sm font-semibold">Request an Integration</h3>
         <p className="text-xs text-muted-foreground mt-1">Need a tool that&apos;s not listed? We&apos;re building more integrations every week.</p>
-        <a href="mailto:hello@syncplus.app" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:underline">
+        <a href="mailto:hello@vantage.app" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:underline">
           <Mail size={12} /> Request integration →
         </a>
       </div>

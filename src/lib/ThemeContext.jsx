@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useLayoutEffect, useState, useEffect } from 'react';
 
 const ThemeContext = createContext({
   theme: 'light',
@@ -7,37 +7,36 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState('light');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+
+    const saved = localStorage.getItem('vantage-theme');
+    if (saved === 'light' || saved === 'dark') {
+      return saved;
+    }
+
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('syncplus-theme');
-    if (saved) {
-      setThemeState(saved);
-    } else {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(systemPrefersDark ? 'dark' : 'light');
-    }
-    setMounted(true);
-  }, []);
+    if (typeof window === 'undefined') return;
 
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('syncplus-theme', theme);
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [theme, mounted]);
+    localStorage.setItem('vantage-theme', theme);
+  }, [theme]);
 
   const setTheme = (newTheme) => {
+    if (newTheme !== 'light' && newTheme !== 'dark') return;
     setThemeState(newTheme);
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    setThemeState((current) => (current === 'light' ? 'dark' : 'light'));
   };
 
   return (

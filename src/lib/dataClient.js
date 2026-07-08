@@ -9,7 +9,7 @@ import {
   sanitizeEnabledPillars,
 } from './workspaceSchema';
 
-const STORAGE_KEY = 'syncplus.localdb.v1';
+const STORAGE_KEY = 'vantage.localdb.v1';
 
 const ENTITY_NAMES = [
   'CalendarBlock',

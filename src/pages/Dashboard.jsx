@@ -1,757 +1,266 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import {
-  Plus,
-  Flame,
-  ListTodo,
-  Calendar,
-  Target,
-  DollarSign,
-  ChevronRight,
-  Trophy,
-  Sparkles,
-  BriefcaseBusiness,
-  CheckCircle2,
-  Receipt,
-  ArrowUpRight,
-  TrendingUp,
-  AlertCircle,
-} from 'lucide-react';
-import {
-  loadLifeOsSnapshot,
-  formatCurrency,
-  getTodayProgress,
-  getWeeklyData,
-  getTodayCalendarBlocks,
-  getUserName,
-  getStreakStats,
-  getMotivationMessage,
-  getOpenInvoiceTotal,
-  getActiveProjectsCount,
-  getTodayOverdueCount,
-  getWeeklyGoalProgress,
-} from '@/lib/workspace';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import RevenueChart from '@/components/dashboard/RevenueChart';
-import PipelineFunnel from '@/components/dashboard/PipelineFunnel';
-import OutstandingInvoices from '@/components/dashboard/OutstandingInvoices';
-import AgingDeals from '@/components/dashboard/AgingDeals';
-import RevenueGoal from '@/components/dashboard/RevenueGoal';
-import LifeOSWidget from '@/components/dashboard/LifeOSWidget';
-
-const MOTIVATIONAL_QUOTES = [
-  "The only way is forward. — Marcus Aurelius",
-  "Small steps every day lead to big changes.",
-  "Progress, not perfection.",
-  "What gets scheduled gets done.",
-  "Trust the process.",
-  "Your future self will thank you.",
-];
-
-/* ────────────────────────── Animation helpers ────────────────────────── */
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring', stiffness: 260, damping: 20 },
-  },
-};
-
-/* ────────────────────────── Sub-components ────────────────────────── */
-
-function StreakHero({ streak, best, avg, percentToNext }) {
-  let gradient = 'from-gray-400 to-gray-500';
-  if (streak >= 30) gradient = 'from-yellow-400 to-orange-500';
-  else if (streak >= 14) gradient = 'from-red-500 to-red-600';
-  else if (streak >= 7) gradient = 'from-orange-500 to-red-500';
-  else if (streak >= 1) gradient = 'from-orange-400 to-orange-500';
-
-  const circumference = 2 * Math.PI * 45;
-  const strokeDashoffset = circumference - (percentToNext / 100) * circumference;
-  const gradientId = `streak-gradient-${Math.min(streak, 30)}`;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-      <div className={`h-2 bg-gradient-to-r ${gradient}`} />
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-
-function StreakHero({ streak, best, avg, percentToNext }) {
-  const gradient = useMemo(() => {
-    if (streak >= 30) return 'from-yellow-400 to-orange-500';
-    if (streak >= 14) return 'from-red-500 to-red-600';
-    if (streak >= 7) return 'from-orange-500 to-red-500';
-    if (streak >= 1) return 'from-orange-400 to-orange-500';
-    return 'from-gray-400 to-gray-500';
-  }, [streak]);
-
-  const circumference = 2 * Math.PI * 45;
-  const strokeDashoffset = circumference - (percentToNext / 100) * circumference;
-  const gradientId = 'streak-ring-gradient'; // stable unique ID
-
-  const stops = useMemo(() => {
-    if (streak >= 30) return ['#fbbf24', '#f59e0b'];
-    if (streak >= 14) return ['#dc2626', '#b91c1c'];
-    if (streak >= 7) return ['#ea580c', '#c2410c'];
-    return ['#fb923c', '#f97316'];
-  }, [streak]);
-
-  return (
-    <motion.div variants={cardVariants} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className={`h-2 bg-gradient-to-r ${gradient}`} />
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Flame size={20} className="text-orange-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Current Streak</p>
-              <p className="text-2xl font-bold text-gray-900">{streak} days</p>
-            </div>
-          </div>
-          {streak >= 7 && (
-            <div className="px-2 py-1 bg-yellow-100 rounded-full text-xs font-semibold text-yellow-700 flex items-center gap-1">
-              <Trophy size={12} /> Best: {best}d
-            </div>
-          )}
-        </div>
-
-        {/* Progress ring */}
-        <div className="relative flex items-center justify-center my-4">
-          <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="6" />
-            <circle
-              cx="50" cy="50" r="45" fill="none"
-              stroke={`url(#${gradientId})`}
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
-            />
-            <defs>
-              <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={stops[0]} />
-                <stop offset="100%" stopColor={stops[1]} />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="absolute flex flex-col items-center">
-            <span className="text-3xl font-bold text-gray-900">{percentToNext}%</span>
-            <span className="text-xs text-gray-500">to 30-day</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-          <div>
-            <span className="font-semibold">Best:</span> {best}d
-          </div>
-          <div>
-            <span className="font-semibold">Average:</span> {avg}d
-          </div>
-          {streak > 0 && (
-            <div className="flex items-center gap-1 text-orange-600 font-medium">
-              <Sparkles size={12} /> On fire!
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function TaskCheckItem({ item, onToggle }) {
-  const isDone = item.record?.status === 'done' || item.completed;
-  const isHabit = item.kind === 'habit';
-
-  return (
-    <label className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${isDone ? 'opacity-60' : ''}`}>
-      <input
-        type="checkbox"
-        className="mt-0.5 w-5 h-5 rounded border-gray-300 accent-emerald-600"
-        checked={isDone}
-        onChange={() => onToggle(item)}
-      />
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-          {item.title}
-        </p>
-        {item.subtitle && (
-          <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
-        )}
-      </div>
-      {isHabit && (
-        <Flame size={14} className="text-orange-500 flex-shrink-0" />
-      )}
-    </label>
-  );
-}
-
-function FocusBoard({ items, onToggle, onQuickAdd }) {
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-
-  const handleQuickAdd = useCallback(() => {
-    if (newTaskTitle.trim()) {
-      onQuickAdd(newTaskTitle);
-      setNewTaskTitle('');
-      setShowQuickAdd(false);
-    }
-  }, [newTaskTitle, onQuickAdd]);
-
-  const incompleteCount = items.filter(i => !i.completed).length;
-
-  return (
-    <motion.div variants={cardVariants} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Today&apos;s Focus</p>
-          <h3 className="font-semibold text-gray-900 mt-0.5">
-            {incompleteCount} item{incompleteCount !== 1 ? 's' : ''} remaining
-          </h3>
-        </div>
-        <button
-          onClick={() => setShowQuickAdd(!showQuickAdd)}
-          className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 flex items-center gap-1 transition-colors"
-        >
-          <Plus size={14} /> Add
-        </button>
-      </div>
-
-      {showQuickAdd && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-        >
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={e => setNewTaskTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
-            placeholder="What needs to be done?"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            autoFocus
-          />
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={handleQuickAdd}
-              className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
-            >
-              Add Task
-            </button>
-        <Link
-          to="/daily"
-          className="flex items-center justify-center gap-1 mt-4 pt-3 border-t border-gray-200 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-        >
-          View all in Today <ChevronRight size={14} />
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function WeeklyMomentum({ weeklyData }) {
-  const max = Math.max(...weeklyData.map(d => d.habitsDone + d.tasksDone), 1);
-  const today = new Date();
-  const todayStr = format(today, 'yyyy-MM-dd');
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Weekly Momentum</p>
-          <h3 className="font-semibold text-gray-900 mt-0.5">Last 7 days</h3>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <span>Tasks + Habits</span>
-        </div>
-      </div>
-
-      <div className="flex items-end justify-between gap-1 h-48 px-1">
-        {weeklyData.map((day, i) => {
-          const count = day.habitsDone + day.tasksDone;
-          const height = Math.max((count / max) * 100, 4); // Min 4% height for visibility
-          const isToday = day.date === todayStr;
-          const dayName = format(new Date(day.date), 'EEE');
-          
-          return (
-            <div key={day.date} className="flex-1 flex flex-col items-center gap-2 group">
-              {/* Count label (above bar) */}
-              {count > 0 && (
-                <span className="text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {count}
-                </span>
-              )}
-              
-              {/* Bar container */}
-              <div className="w-full flex items-end justify-center h-40">
-                <div className="relative w-full max-w-[32px] flex flex-col justify-end">
-                  <div
-                    className={`w-full rounded-t-md transition-all duration-700 cursor-pointer relative ${isToday ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
-                    style={{
-                      height: `${height}%`,
-                      background: `linear-gradient(to top, ${count > 0 ? 'rgb(16, 185, 129)' : 'rgb(209, 213, 219)'} 0%, ${count > 0 ? 'rgb(5, 150, 105)' : 'rgb(229, 231, 235)'} 100%)`
-                    }}
-                    title={`${dayName}: ${count} completions`}
-                  />
-                </div>
-              </div>
-              
-              {/* Day label */}
-              <span className={`text-xs font-medium ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>
-                {dayName}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function TodaySchedule({ blocks }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Today&apos;s Schedule</p>
-          <h3 className="font-semibold text-gray-900 mt-0.5">
-            {blocks.length} block{blocks.length !== 1 ? 's' : ''} scheduled
-          </h3>
-        </div>
-        <Link
-          to="/calendar"
-          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-        >
-          View calendar
-        </Link>
-      </div>
-
-      <div className="space-y-2">
-        {blocks.length === 0 ? (
-          <div className="py-6 text-center">
-            <p className="text-gray-400 text-sm">No blocks scheduled</p>
-            <Link to="/calendar" className="text-xs text-emerald-600 hover:underline mt-1 inline-block">
-              Add time block
-            </Link>
-          </div>
-        ) : (
-          blocks.slice(0, 4).map((block) => {
-            const startHour = parseInt(block.start_time.split(':')[0], 10);
-            const period = startHour < 12 ? 'AM' : 'PM';
-            const displayHour = startHour % 12 || 12;
-            
-            return (
-              <div
-                key={block.id}
-                className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
-              >
-                <div className="flex flex-col items-center min-w-[50px]">
-                  <span className="text-sm font-bold text-gray-900">{displayHour}{period[0]}</span>
-                  <span className="text-xs text-gray-500">{block.start_time}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{block.title}</p>
-                  <p className="text-xs text-gray-500">{block.end_time}</p>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {blocks.length > 4 && (
-        <p className="text-xs text-gray-400 text-center mt-3">
-          +{blocks.length - 4} more blocks
-        </p>
-      )}
-
-      <Link
-        to="/calendar"
-        className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-gray-100 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-      >
-        <Plus size={14} /> Add block
-      </Link>
-    </div>
-  );
-}
-
-function QuickStatsRow({ tasksDue, projectsActive, invoiceTotal, streak }) {
-  const stats = [
-    { label: 'Tasks due', value: tasksDue, to: '/tasks', icon: ListTodo, color: 'text-blue-600' },
-    { label: 'Projects', value: projectsActive, to: '/projects', icon: Target, color: 'text-purple-600' },
-    { label: 'Unpaid', value: `₹${formatCurrency(invoiceTotal)}`, to: '/invoices', icon: DollarSign, color: 'text-amber-600' },
-    { label: 'Streak', value: `${streak}d`, to: '/habits', icon: Flame, color: 'text-orange-600' },
-  ];
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {stats.map((stat) => {
-        const Icon = stat.icon;
-        return (
-          <Link
-            key={stat.label}
-            to={stat.to}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-          >
-            <Icon size={14} className={stat.color} />
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-gray-900">{stat.value}</span>
-              <span className="text-[10px] text-gray-500 uppercase tracking-wide">{stat.label}</span>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-function WeeklyGoalProgress({ weeklyProgress }) {
-  const { done, total, percent } = weeklyProgress;
-  const color = percent >= 80 ? 'bg-green-500' : percent >= 50 ? 'bg-amber-500' : 'bg-red-500';
-  
-  if (total === 0) return null;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs text-gray-500 uppercase tracking-wide">Weekly Goal</p>
-        <span className="text-sm font-bold text-gray-900">{done}/{total} tasks</span>
-      </div>
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-      <p className="text-xs text-gray-500 mt-1">{percent}% complete</p>
-    </div>
-  );
-}
-
-function InlineQuickAdd({ onAdd }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState('');
-
-  const handleAdd = () => {
-    if (text.trim()) {
-      onAdd(text);
-      setText('');
-      setOpen(false);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors"
-      >
-        <Plus size={14} /> Quick add task...
-      </button>
-    );
-  }
-
-  return (
-    <div className="flex gap-2">
-      <input
-        type="text"
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && handleAdd()}
-        placeholder="e.g., Call client tomorrow at 3pm"
-        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        autoFocus
-      />
-      <button
-        onClick={handleAdd}
-        className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700"
-      >
-        Add
-      </button>
-      <button
-        onClick={() => { setOpen(false); setText(''); }}
-        className="px-3 py-2 text-gray-500 hover:text-gray-700"
-      >
-        ✕
-      </button>
-    </div>
-  );
-}
+import { 
+  Target, TrendingUp, CalendarRange, ArrowUpRight, Zap,
+  Wallet, Activity, ShieldCheck
+} from 'lucide-react';
+import { format, startOfWeek, endOfWeek, isToday, addDays } from 'date-fns';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
-  const [snapshot, setSnapshot] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [newTaskText, setNewTaskText] = useState('');
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('syncplus-user') || '{}');
+  const [data, setData] = useState({
+    goals: [], tasks: [], projects: [], habits: [], habitLogs: [], invoices: [], expenses: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadLifeOsSnapshot().then((data) => {
-      setSnapshot(data);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Failed to load snapshot:', err);
-      setError(err.message || 'Failed to load data');
-      setLoading(false);
-    });
+  const load = useCallback(async () => {
+    const [g, t, p, h, hl, i, e] = await Promise.all([
+      dataClient.entities.Goal.list('-created_date', 50),
+      dataClient.entities.Task.list('-created_date', 200),
+      dataClient.entities.Project.list('-created_date', 100),
+      dataClient.entities.Habit.list('-created_date', 50),
+      dataClient.entities.HabitLog.list('-date', 500),
+      dataClient.entities.Invoice.list('-issue_date', 100),
+      dataClient.entities.Expense.list('-date', 100)
+    ]);
+    setData({ goals: g, tasks: t, projects: p, habits: h, habitLogs: hl, invoices: i, expenses: e });
+    setLoading(false);
   }, []);
 
-  const data = useMemo(() => {
-    if (!snapshot) return null;
+  useEffect(() => { load(); }, [load]);
 
-    // Get all incomplete tasks and habits for today
-    const todayKey = format(new Date(), 'yyyy-MM-dd');
-    
-    const tasks = snapshot.tasks
-      .filter(t => t.status !== 'done' && (!t.due_date || t.due_date === todayKey))
-      .slice(0, 7)
-      .map(t => ({ 
-        id: `task-${t.id}`, 
-        title: t.title, 
-        kind: 'task', 
-        record: t,
-        completed: t.status === 'done',
-        subtitle: t.due_date ? `Due ${t.due_date}` : ''
-      }));
+  const activeGoals = useMemo(() => data.goals.filter(g => g.status === 'active'), [data.goals]);
+  const todayTasks = useMemo(() => data.tasks.filter(t => t.due_date === format(new Date(), 'yyyy-MM-dd') && t.status !== 'done'), [data.tasks]);
+  const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
+  const weekEnd = useMemo(() => endOfWeek(new Date(), { weekStartsOn: 1 }), []);
+  
+  const weekProgress = useMemo(() => {
+    const weekTasks = data.tasks.filter(t => t.due_date && new Date(t.due_date) >= weekStart && new Date(t.due_date) <= weekEnd);
+    const weekDone = weekTasks.filter(t => t.status === 'done').length;
+    return weekTasks.length > 0 ? Math.round((weekDone / weekTasks.length) * 100) : 0;
+  }, [data.tasks, weekStart, weekEnd]);
 
-    const habits = snapshot.habits
-      .filter(h => {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const log = snapshot.habitLogs.find(l => l.habit_id === h.id && l.date === today);
-        return !log?.completed;
-      })
-      .slice(0, 4)
-      .map(h => ({ 
-        id: `habit-${h.id}`, 
-        title: h.name, 
-        kind: 'habit', 
-        record: h,
-        completed: false 
-      }));
+  const habitProgress = useMemo(() => {
+    const todayHabits = data.habits.length;
+    const todayHabitDone = data.habits.filter(h => data.habitLogs.find(l => l.habit_id === h.id && l.date === format(new Date(), 'yyyy-MM-dd') && l.completed)).length;
+    return todayHabits > 0 ? Math.round((todayHabitDone / todayHabits) * 100) : 0;
+  }, [data.habits, data.habitLogs]);
 
-    const items = [...tasks, ...habits];
+  const financialStats = useMemo(() => ({
+    revenue: data.invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total || 0), 0),
+    pending: data.invoices.filter(inv => inv.status !== 'paid').reduce((sum, inv) => sum + (inv.total || 0), 0),
+    expenses: data.expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0)
+  }), [data.invoices, data.expenses]);
 
-    const streakStats = getStreakStats(snapshot.habits, snapshot.habitLogs);
-    const progress = getTodayProgress(snapshot);
-    const weekly = getWeeklyData(snapshot);
-    const todayBlocks = getTodayCalendarBlocks(snapshot).slice(0, 4);
-    const weeklyProgress = getWeeklyGoalProgress(snapshot);
-    const overdueCount = getTodayOverdueCount(snapshot);
+  if (loading) return <div className="flex items-center justify-center h-screen text-xs font-black uppercase tracking-widest opacity-40">Loading Vantage workspace...</div>;
 
-    return {
-      userName: getUserName(snapshot),
-      streak: streakStats.current,
-      streakBest: streakStats.best,
-      streakAvg: streakStats.avg,
-      streakPercent: streakStats.percentToNext,
-      progress,
-      weekly,
-      items,
-      todayBlocks,
-      weeklyProgress,
-      overdueCount,
-      invoiceTotal: getOpenInvoiceTotal(snapshot),
-      projectsActive: getActiveProjectsCount(snapshot),
-    };
-  }, [snapshot]);
-
-  const handleToggle = async (item) => {
-    if (!item.record) return;
-
-    try {
-      if (item.kind === 'habit') {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const existing = snapshot.habitLogs.find(l => l.habit_id === item.record.id && l.date === today);
-        
-        if (existing) {
-          await dataClient.entities.HabitLog.update(existing.id, { completed: !existing.completed });
-        } else {
-          await dataClient.entities.HabitLog.create({
-            habit_id: item.record.id,
-            date: today,
-            completed: true,
-          });
-        }
-      } else if (item.kind === 'task') {
-        await dataClient.entities.Task.update(item.record.id, { 
-          status: item.record.status === 'done' ? 'todo' : 'done' 
-        });
-      }
-
-      const fresh = await loadLifeOsSnapshot();
-      setSnapshot(fresh);
-    } catch (e) {
-      console.error('Failed to update:', e);
-    }
-  };
-
-  const handleQuickAdd = async (title) => {
-    try {
-      // Simple task creation with today's date
-      await dataClient.entities.Task.create({
-        title,
-        status: 'todo',
-        due_date: format(new Date(), 'yyyy-MM-dd'),
-      });
-      const fresh = await loadLifeOsSnapshot();
-      setSnapshot(fresh);
-    } catch (e) {
-      console.error('Failed to add task:', e);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-2 text-gray-500">
-          <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-          Loading your command center...
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-500 font-semibold">Failed to load dashboard</p>
-          <p className="text-sm text-gray-500 mt-1">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-3 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">No data available</p>
-      </div>
-    );
-  }
-
-  const today = new Date();
-  const hour = today.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const quote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
-  const progressPercent = data.progress.totalHabits + data.progress.tasksDue > 0
-    ? Math.round(((data.progress.habitsCompleted + data.progress.tasksDone) / 
-       (data.progress.totalHabits + data.progress.tasksDue)) * 100)
-    : 0;
-  const motivation = getMotivationMessage(data.streak, progressPercent, data.overdueCount);
+  const hasWorkspaceData = [data.goals, data.tasks, data.projects, data.habits, data.invoices, data.expenses].some((list) => list.length > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <div className="space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                {greeting}, {data.userName}! 👋
-              </h1>
-              <p className="text-gray-600 mt-1 text-lg">{format(today, 'EEEE, MMMM d, yyyy')}</p>
+    <div className="max-w-7xl mx-auto space-y-12 pb-20">
+      
+      {/* Welcome & Global KPI */}
+      <section className="grid gap-6 lg:grid-cols-[1.8fr_1fr] items-start pb-12 border-b border-border/50">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Vantage OS</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{format(new Date(), 'EEEE, MMMM do')}</span>
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="text-5xl font-black tracking-tighter leading-tight">Command your work with clarity.</h1>
+            <p className="max-w-2xl text-sm text-muted-foreground">Vantage brings your goals, projects, habits, and business operations into one local-first operating system. Start with what matters and keep the rest in view.</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button onClick={() => navigate('/weekly-hub')} className="vantage-button-primary shadow-2xl flex items-center justify-center gap-2">
+              <CalendarRange size={16} /> Open Weekly Hub
+            </button>
+            <button onClick={() => navigate('/goals')} className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-bold text-foreground hover:bg-muted transition-colors">
+              Create your first goal
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="vantage-card p-6 bg-muted/80 border-border">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground">Quick start</p>
+            <h2 className="mt-4 text-xl font-black tracking-tight">Build your first operating rhythm</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Add a goal, set a task, and define a daily ritual to see Vantage come alive.</p>
+            <div className="mt-6 grid gap-2 text-sm">
+              <button onClick={() => navigate('/tasks')} className="rounded-xl border border-border bg-background px-4 py-3 text-left font-semibold hover:bg-muted transition">Add a task</button>
+              <button onClick={() => navigate('/habits')} className="rounded-xl border border-border bg-background px-4 py-3 text-left font-semibold hover:bg-muted transition">Add a habit</button>
+              <button onClick={() => navigate('/projects')} className="rounded-xl border border-border bg-background px-4 py-3 text-left font-semibold hover:bg-muted transition">Add a project</button>
             </div>
-            <div className="flex items-center gap-3">
-              {data.streak >= 7 && (
-                <div className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold flex items-center gap-1">
-                  🔥 {data.streak} day streak
+          </div>
+        </div>
+      </section>
+
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard label="Weekly Completion" value={`${weekProgress}%`} icon={Activity} progress={weekProgress} />
+        <MetricCard label="Ritual Consistency" value={`${habitProgress}%`} icon={Zap} progress={habitProgress} />
+        <MetricCard label="Strategic Pillars" value={activeGoals.length} icon={ShieldCheck} />
+        <MetricCard label="Mission Critical" value={todayTasks.length} icon={Target} />
+      </div>
+
+      {!hasWorkspaceData && (
+        <section className="vantage-card border-dashed border-2 border-border/60 p-8 text-center">
+          <h2 className="text-2xl font-black tracking-tight">Your Vantage workspace is ready.</h2>
+          <p className="mt-3 text-sm text-muted-foreground">There is no data yet, but everything is set up. Start with one goal, one project, or one habit to see the dashboard fill in.</p>
+        </section>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        
+        {/* Main Content: Trends & Pillars */}
+        <div className="lg:col-span-2 space-y-12">
+          
+          {/* Strategic Momentum Chart */}
+          <section className="vantage-card space-y-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
+                <TrendingUp size={24} className="text-primary" /> Strategic Momentum
+              </h3>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="w-4 h-1 bg-muted rounded-full" />)}
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-6 h-48 items-end">
+              {Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).map((day, i) => {
+                const dayTasks = data.tasks.filter(t => t.due_date === format(day, 'yyyy-MM-dd'));
+                const dayDone = dayTasks.filter(t => t.status === 'done').length;
+                const ratio = dayTasks.length > 0 ? (dayDone / dayTasks.length) : 0;
+                const active = isToday(day);
+                
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center h-full justify-end gap-3 group">
+                    <div className="relative w-full flex-1 flex flex-col justify-end">
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${Math.max(ratio * 100, 8)}%` }}
+                        className={cn(
+                          "w-full rounded-2xl transition-all duration-500 shadow-sm",
+                          active ? "bg-primary" : "bg-muted-foreground/10 group-hover:bg-muted-foreground/20"
+                        )}
+                      />
+                    </div>
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest", active ? "text-primary" : "text-muted-foreground opacity-40")}>
+                      {format(day, 'EEE')}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Goal Horizons */}
+          <section className="space-y-6">
+            <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
+              <ShieldCheck size={24} className="text-primary" /> Goal Horizons
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {activeGoals.map(goal => {
+                const gTasks = data.tasks.filter(t => t.goal_id === goal.id);
+                const doneTasks = gTasks.filter(t => t.status === 'done').length;
+                const progress = gTasks.length > 0 ? Math.round((doneTasks / gTasks.length) * 100) : 0;
+
+                return (
+                  <div key={goal.id} className="vantage-card group overflow-hidden relative">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Strategic Pillar</p>
+                        <h4 className="font-black text-lg tracking-tight uppercase italic">{goal.title}</h4>
+                      </div>
+                      <span className="text-2xl font-black tracking-tighter">{progress}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className="h-full bg-primary"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar: Financials & Daily Action */}
+        <div className="space-y-12">
+          
+          {/* Executive Financials */}
+          <section className="vantage-card bg-primary text-primary-foreground !p-8 space-y-8 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <h3 className="text-xl font-black tracking-tight flex items-center justify-between border-b border-white/10 pb-4">
+              Capital <Wallet size={20} />
+            </h3>
+            <div className="space-y-6">
+              <FinanceItem label="Profitability" value={`₹${((financialStats.revenue - financialStats.expenses)/1000).toFixed(1)}k`} highlighted />
+              <FinanceItem label="Total Revenue" value={`₹${(financialStats.revenue/1000).toFixed(1)}k`} />
+              <FinanceItem label="Awaiting" value={`₹${(financialStats.pending/1000).toFixed(1)}k`} />
+            </div>
+            <button onClick={() => navigate('/business')} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+              Manage Business Hub
+            </button>
+          </section>
+
+          {/* Daily Mission Critical */}
+          <section className="vantage-card space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black tracking-tight">Mission Critical</h3>
+              <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+                <Zap size={14} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {todayTasks.length > 0 ? todayTasks.slice(0, 5).map(task => (
+                <div key={task.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted transition-all cursor-pointer group">
+                  <div className="w-1.5 h-6 bg-primary/10 rounded-full group-hover:bg-primary transition-all" />
+                  <span className="font-bold text-sm truncate flex-1">{task.title}</span>
+                  <ArrowUpRight size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-all" />
+                </div>
+              )) : (
+                <div className="p-8 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
+                  Mission Accomplished
                 </div>
               )}
             </div>
-          </div>
-          
-          <p className="text-sm text-gray-600 italic max-w-2xl">&quot;{quote}&quot;</p>
-          <p className="text-sm text-emerald-600 font-medium">{motivation}</p>
+          </section>
 
-          {/* Quick Stats Row */}
-          <div className="flex flex-wrap gap-2 pt-2">
-            <QuickStatsRow 
-              tasksDue={(data.progress.tasksDue - data.progress.tasksDone) || 0}
-              projectsActive={data.projectsActive}
-              invoiceTotal={data.invoiceTotal}
-              streak={data.streak}
-            />
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column - Focus Board + Schedule */}
-          <div className="lg:col-span-2 space-y-6">
-            <FocusBoard 
-              items={data.items} 
-              onToggle={handleToggle}
-              onQuickAdd={handleQuickAdd}
-            />
-            
-            <TodaySchedule blocks={data.todayBlocks} />
-          </div>
-
-          {/* Right Column - Streak + Momentum + Goals */}
-          <div className="space-y-6">
-            <StreakHero 
-              streak={data.streak}
-              best={data.streakBest}
-              avg={data.streakAvg}
-              percentToNext={data.streakPercent}
-            />
-            
-            <WeeklyMomentum weeklyData={data.weekly} />
-            
-            <WeeklyGoalProgress weeklyProgress={data.weeklyProgress} />
-
-            {/* Quick Links (compact) */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Access</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <Link to="/habits" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
-                  <Flame size={14} className="text-orange-500" /> Habits
-                </Link>
-                <Link to="/tasks" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
-                  <ListTodo size={14} className="text-blue-500" /> Tasks
-                </Link>
-                <Link to="/calendar" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
-                  <Calendar size={14} className="text-purple-500" /> Calendar
-                </Link>
-                <Link to="/journal" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">
-                  <Sparkles size={14} className="text-yellow-500" /> Journal
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-xs text-gray-400 pt-4 border-t border-gray-200">
-          SyncPlus • {format(today, 'MMMM yyyy')} • {data.items.length} item{data.items.length !== 1 ? 's' : ''} due today
         </div>
       </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, icon: Icon, progress }) {
+  return (
+    <div className="vantage-card relative overflow-hidden group">
+      {progress !== undefined && (
+        <div className="absolute inset-0 bg-primary opacity-[0.02] group-hover:opacity-[0.05] transition-opacity" />
+      )}
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2.5 rounded-2xl bg-muted/50 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+          <Icon size={18} />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+      </div>
+      <div className="text-4xl font-black tracking-tighter leading-none">{value}</div>
+    </div>
+  );
+}
+
+function FinanceItem({ label, value, highlighted }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">{label}</span>
+      <span className={cn("font-black tracking-tighter", highlighted ? "text-3xl" : "text-xl text-white/80")}>{value}</span>
     </div>
   );
 }

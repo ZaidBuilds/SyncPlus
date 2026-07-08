@@ -1,70 +1,86 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = 'syncplus.local-user';
+const STORAGE_KEY = 'vantage_user';
+const USERS_LIST_KEY = 'vantage_users';
 
-const defaultUser = {
-  id: 'local-user',
-  full_name: 'Workspace Admin',
-  email: 'admin@syncplus.local',
-  role: 'admin',
-};
-
-function loadLocalUser() {
-  if (typeof window === 'undefined') {
-    return defaultUser;
-  }
-
+function loadUser() {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : defaultUser;
-  } catch (error) {
-    return defaultUser;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(defaultUser);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
-    const storedUser = loadLocalUser();
-    setUser(storedUser);
-    setIsAuthenticated(true);
+    const stored = loadUser();
+    if (stored) {
+      setUser(stored);
+      setIsAuthenticated(true);
+    }
     setIsLoadingAuth(false);
   }, []);
 
-  const persistUser = useCallback((nextUser) => {
-    setUser(nextUser);
+  const login = useCallback((userData) => {
+    setUser(userData);
     setIsAuthenticated(true);
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
   }, []);
 
-  const logout = useCallback(() => {
-    persistUser(defaultUser);
-  }, [persistUser]);
+  const signup = useCallback((userData) => {
+    // Store users list for multi-account support
+    const users = JSON.parse(localStorage.getItem(USERS_LIST_KEY) || '[]');
+    const exists = users.find(u => u.email === userData.email);
+    if (exists) throw new Error('Account already exists with this email');
+    users.push({ ...userData, created_at: new Date().toISOString() });
+    localStorage.setItem(USERS_LIST_KEY, JSON.stringify(users));
+    // Auto login
+    login(userData);
+  }, [login]);
 
-  const navigateToLogin = useCallback(() => {}, []);
-  const checkAppState = useCallback(() => {}, []);
+  const logout = useCallback(() => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const updateProfile = useCallback((updates) => {
+    if (!user) return;
+    const updated = { ...user, ...updates };
+    setUser(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Also update in users list
+    const users = JSON.parse(localStorage.getItem(USERS_LIST_KEY) || '[]');
+    const idx = users.findIndex(u => u.email === user.email);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...updates };
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(users));
+    }
+  }, [user]);
 
   const value = useMemo(
     () => ({
       user,
-      setUser: persistUser,
       isAuthenticated,
       isLoadingAuth,
+      login,
+      signup,
+      logout,
+      updateProfile,
+      setUser: login,
       isLoadingPublicSettings: false,
       authError: null,
       appPublicSettings: { mode: 'local' },
-      logout,
-      navigateToLogin,
-      checkAppState,
+      navigateToLogin: () => {},
+      checkAppState: () => {},
     }),
-    [user, persistUser, isAuthenticated, isLoadingAuth, logout, navigateToLogin, checkAppState]
+    [user, isAuthenticated, isLoadingAuth, login, signup, logout, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -75,6 +91,5 @@ export function useAuth() {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-
   return context;
 }

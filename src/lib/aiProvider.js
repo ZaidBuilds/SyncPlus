@@ -1,6 +1,6 @@
 /**
  * Calls the selected AI provider directly from the browser using the user's API key.
- * Supports: OpenAI, Google Gemini, Groq (open-source models)
+ * Supports: OpenAI, Google Gemini, Groq, OpenRouter
  */
 
 const SYSTEM_PROMPT = `You are an expert goal-setting coach and learning path designer.
@@ -40,6 +40,8 @@ export async function callAiProvider({ goal, provider, apiKey, model }) {
     return await callGemini({ apiKey, model: model || 'gemini-1.5-flash', userMessage });
   } else if (provider === 'groq') {
     return await callGroq({ apiKey, model: model || 'llama3-8b-8192', userMessage });
+  } else if (provider === 'openrouter') {
+    return await callOpenRouter({ apiKey, model: model || 'google/gemini-2.0-flash-001', userMessage });
   }
   throw new Error('Unknown provider');
 }
@@ -103,4 +105,34 @@ async function callGroq({ apiKey, model, userMessage }) {
   }
   const data = await res.json();
   return JSON.parse(data.choices[0].message.content);
+}
+
+async function callOpenRouter({ apiKey, model, userMessage }) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json', 
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://vantage.ai', // Optional for OpenRouter
+      'X-Title': 'Vantage Life OS'
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      // OpenRouter supports response_format for many models but not all
+      // We'll rely on the prompt for others
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `OpenRouter error ${res.status}`);
+  }
+  const data = await res.json();
+  const content = data.choices[0].message.content;
+  // Handle markdown blocks if present
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  return JSON.parse(jsonMatch ? jsonMatch[0] : content);
 }

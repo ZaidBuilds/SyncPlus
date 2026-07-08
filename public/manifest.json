@@ -1,6 +1,6 @@
 {
-  "name": "SyncPlus",
-  "short_name": "SyncPlus",
+  "name": "Vantage",
+  "short_name": "Vantage",
   "description": "An integrated workspace for planning, execution, pipeline, and collections.",
   "start_url": "/",
   "display": "standalone",

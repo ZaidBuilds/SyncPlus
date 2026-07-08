@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dataClient } from '@/lib/dataClient';
-import { Plus, CheckCircle2, Circle, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Pencil, Trash2, GripVertical, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
@@ -72,6 +72,7 @@ export default function Tasks() {
   const [modal, setModal] = useState(null);
   const [statusFilter, setStatusFilter] = useState('todo');
   const [loading, setLoading] = useState(true);
+  const [focusTask, setFocusTask] = useState(null);
 
   const load = async () => {
     const [t, p, g] = await Promise.all([
@@ -167,6 +168,11 @@ export default function Tasks() {
                           </div>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</span>
+                        {task.status !== 'done' && (
+                          <button onClick={() => setFocusTask(task)} title="Focus Mode" className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 flex-shrink-0 transition-colors">
+                            <Target size={14} />
+                          </button>
+                        )}
                         <button onClick={() => setModal(task)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground flex-shrink-0"><Pencil size={14} /></button>
                       </div>
                     )}
